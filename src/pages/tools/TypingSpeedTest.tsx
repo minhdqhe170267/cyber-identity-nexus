@@ -339,6 +339,18 @@ const TypingSpeedTest = () => {
             ))}
             {mode === 'zen' && <span className="font-mono text-[11px] text-muted-foreground/30 px-2">∞ infinite</span>}
           </div>
+
+          <div className="w-px h-5 bg-muted/20 mx-2" />
+
+          <div className="flex items-center gap-0.5">
+            <Globe size={12} className="text-muted-foreground/30 mr-1" />
+            {(['english', 'vietnamese'] as Language[]).map(l => (
+              <button key={l} onClick={() => setLanguage(l)}
+                className={`font-mono text-[11px] px-2.5 py-1.5 rounded-lg transition-all ${language === l ? 'text-primary bg-primary/10' : 'text-muted-foreground/30 hover:text-muted-foreground/60'}`}>
+                {l === 'english' ? 'EN' : 'VI'}
+              </button>
+            ))}
+          </div>
         </div>
 
         <AnimatePresence mode="wait">
