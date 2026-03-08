@@ -1,24 +1,76 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, ResponsiveContainer } from 'recharts';
-import ToolLayout from '@/components/ToolLayout';
-import { Progress } from '@/components/ui/progress';
+import { Link } from 'react-router-dom';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Tooltip } from 'recharts';
+import { Trophy } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
-import {
-  EASY_WORDS, NORMAL_WORDS, HARD_WORDS, SENTENCES,
-  CODE_SNIPPETS, NUMBER_SEQUENCES, VIETNAMESE_WORDS,
-} from '@/data/typingWordPools';
+import { top200english, top1000english, quotes, type Quote } from '@/data/typingWordPools';
 
-type Mode = 'WORDS' | 'SENTENCES' | 'CODE' | 'NUMBERS';
-type Difficulty = 'EASY' | 'NORMAL' | 'HARD';
-type Language = 'ENGLISH' | 'VIETNAMESE';
+// ─── Types ───
+type TestMode = 'time' | 'words' | 'quote' | 'zen';
 type TestState = 'idle' | 'running' | 'finished';
+type QuoteLength = 'short' | 'medium' | 'long' | 'epic';
 
-const DURATIONS = [15, 30, 60, 120] as const;
-const MODES: Mode[] = ['WORDS', 'SENTENCES', 'CODE', 'NUMBERS'];
-const DIFFICULTIES: Difficulty[] = ['EASY', 'NORMAL', 'HARD'];
+const TIME_VALUES = [15, 30, 60, 120];
+const WORD_VALUES = [10, 25, 50, 100];
+const QUOTE_VALUES: QuoteLength[] = ['short', 'medium', 'long', 'epic'];
 
+// ─── Sound effects via Web Audio API ───
+let audioCtx: AudioContext | null = null;
+function getAudioCtx() {
+  if (!audioCtx) audioCtx = new AudioContext();
+  return audioCtx;
+}
+function playClick() {
+  try {
+    const ctx = getAudioCtx();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.type = 'square';
+    osc.frequency.setValueAtTime(800, ctx.currentTime);
+    gain.gain.setValueAtTime(0.03, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.05);
+    osc.start(ctx.currentTime);
+    osc.stop(ctx.currentTime + 0.05);
+  } catch {}
+}
+function playError() {
+  try {
+    const ctx = getAudioCtx();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(200, ctx.currentTime);
+    gain.gain.setValueAtTime(0.04, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.08);
+    osc.start(ctx.currentTime);
+    osc.stop(ctx.currentTime + 0.08);
+  } catch {}
+}
+function playComplete() {
+  try {
+    const ctx = getAudioCtx();
+    [523, 659, 784].forEach((freq, i) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.type = 'square';
+      osc.frequency.setValueAtTime(freq, ctx.currentTime + i * 0.1);
+      gain.gain.setValueAtTime(0.04, ctx.currentTime + i * 0.1);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + i * 0.1 + 0.15);
+      osc.start(ctx.currentTime + i * 0.1);
+      osc.stop(ctx.currentTime + i * 0.1 + 0.15);
+    });
+  } catch {}
+}
+
+// ─── Helpers ───
 function shuffle<T>(arr: T[]): T[] {
   const a = [...arr];
   for (let i = a.length - 1; i > 0; i--) {
@@ -28,639 +80,778 @@ function shuffle<T>(arr: T[]): T[] {
   return a;
 }
 
-function getWordPool(mode: Mode, difficulty: Difficulty, language: Language): string[] {
-  if (language === 'VIETNAMESE') return shuffle(VIETNAMESE_WORDS);
-  switch (mode) {
-    case 'SENTENCES': return shuffle(SENTENCES);
-    case 'CODE': return shuffle(CODE_SNIPPETS);
-    case 'NUMBERS': return shuffle(NUMBER_SEQUENCES);
-    default:
-      if (difficulty === 'EASY') return shuffle(EASY_WORDS);
-      if (difficulty === 'HARD') return shuffle(HARD_WORDS);
-      return shuffle(NORMAL_WORDS);
+function generateWords(count: number, pool: string[], punctuation: boolean, numbers: boolean): string[] {
+  const words: string[] = [];
+  const shuffled = shuffle(pool);
+  let idx = 0;
+  let afterSentenceEnd = false;
+
+  while (words.length < count) {
+    if (numbers && words.length > 0 && words.length % 8 === 0) {
+      words.push(String(Math.floor(Math.random() * 1000) + 1));
+      continue;
+    }
+
+    let word = shuffled[idx % shuffled.length];
+    idx++;
+
+    if (afterSentenceEnd) {
+      word = word.charAt(0).toUpperCase() + word.slice(1);
+      afterSentenceEnd = false;
+    }
+
+    if (punctuation && Math.random() < 0.15) {
+      const puncts = ['.', ',', ';', ':', '!', '?'];
+      const p = puncts[Math.floor(Math.random() * puncts.length)];
+      word += p;
+      if (['.', '!', '?'].includes(p)) afterSentenceEnd = true;
+    }
+
+    words.push(word);
   }
+  return words;
 }
 
-function generateText(mode: Mode, difficulty: Difficulty, language: Language): string {
-  const pool = getWordPool(mode, difficulty, language);
-  if (mode === 'SENTENCES' || mode === 'CODE') {
-    return pool.slice(0, 20).join(' ');
-  }
-  // For words/numbers/vietnamese: repeat pool to get enough text
-  const words: string[] = [];
-  while (words.length < 200) words.push(...shuffle(pool));
-  return words.slice(0, 200).join(' ');
+function getQuote(length: QuoteLength): Quote {
+  const filtered = quotes.filter(q => q.length === length);
+  return filtered.length > 0
+    ? filtered[Math.floor(Math.random() * filtered.length)]
+    : quotes[Math.floor(Math.random() * quotes.length)];
 }
 
 function getRating(wpm: number) {
-  if (wpm >= 110) return { label: 'HACKER TIER', color: 'rainbow', cls: 'animate-pulse bg-gradient-to-r from-primary via-secondary to-destructive bg-clip-text text-transparent' };
-  if (wpm >= 90) return { label: 'BLAZING', color: 'pink', cls: 'text-destructive drop-shadow-[0_0_8px_hsl(var(--destructive)/0.6)]' };
-  if (wpm >= 70) return { label: 'FAST', color: 'green', cls: 'text-primary drop-shadow-[0_0_8px_hsl(var(--primary)/0.6)]' };
-  if (wpm >= 50) return { label: 'SKILLED', color: 'green', cls: 'text-primary' };
-  if (wpm >= 30) return { label: 'AVERAGE', color: 'blue', cls: 'text-secondary' };
-  return { label: 'ROOKIE', color: 'grey', cls: 'text-muted-foreground' };
+  if (wpm >= 130) return { label: 'HACKER TIER', cls: 'animate-pulse bg-gradient-to-r from-primary via-secondary to-destructive bg-clip-text text-transparent font-display text-sm', border: 'border-gradient' };
+  if (wpm >= 110) return { label: 'ELITE', cls: 'bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent font-display text-sm', border: '' };
+  if (wpm >= 90) return { label: 'BLAZING', cls: 'text-destructive drop-shadow-[0_0_8px_hsl(var(--destructive)/0.6)] font-display text-sm', border: '' };
+  if (wpm >= 70) return { label: 'FAST', cls: 'text-primary drop-shadow-[0_0_8px_hsl(var(--primary)/0.6)] font-display text-sm', border: '' };
+  if (wpm >= 50) return { label: 'SKILLED', cls: 'text-primary font-display text-sm', border: '' };
+  if (wpm >= 30) return { label: 'AVERAGE', cls: 'text-secondary font-display text-sm', border: '' };
+  return { label: 'ROOKIE', cls: 'text-muted-foreground font-display text-sm', border: '' };
 }
 
+// ─── Main Component ───
 const TypingSpeedTest = () => {
-  const [mode, setMode] = useState<Mode>('WORDS');
-  const [difficulty, setDifficulty] = useState<Difficulty>('NORMAL');
-  const [language, setLanguage] = useState<Language>('ENGLISH');
-  const [duration, setDuration] = useState(60);
+  // Config
+  const [mode, setMode] = useState<TestMode>('time');
+  const [timeValue, setTimeValue] = useState(30);
+  const [wordValue, setWordValue] = useState(25);
+  const [quoteValue, setQuoteValue] = useState<QuoteLength>('medium');
+  const [punctuation, setPunctuation] = useState(false);
+  const [numbers, setNumbers] = useState(false);
+  const [soundOn, setSoundOn] = useState(false);
+
+  // Test state
   const [testState, setTestState] = useState<TestState>('idle');
-  const [text, setText] = useState('');
-  const [typed, setTyped] = useState('');
-  const [timeLeft, setTimeLeft] = useState(60);
+  const [words, setWords] = useState<string[]>([]);
+  const [currentQuote, setCurrentQuote] = useState<Quote | null>(null);
+  const [wordIndex, setWordIndex] = useState(0);
+  const [charIndex, setCharIndex] = useState(0);
+  const [inputBuffer, setInputBuffer] = useState(''); // current word typed chars
+  const [wordResults, setWordResults] = useState<Array<{ typed: string; target: string }>>([]);
+  const [timeLeft, setTimeLeft] = useState(30);
+  const [elapsed, setElapsed] = useState(0);
   const [capsLock, setCapsLock] = useState(false);
-  const [wpmHistory, setWpmHistory] = useState<{ time: number; wpm: number }[]>([]);
-  const [showSaveModal, setShowSaveModal] = useState(false);
-  const [playerName, setPlayerName] = useState('');
-  const [showLeaderboard, setShowLeaderboard] = useState(false);
-  const [leaderboard, setLeaderboard] = useState<any[]>([]);
+  const [consecutiveErrors, setConsecutiveErrors] = useState(0);
+  const [shake, setShake] = useState(false);
 
-  const inputRef = useRef<HTMLInputElement>(null);
+  // Stats tracking
+  const [correctChars, setCorrectChars] = useState(0);
+  const [incorrectChars, setIncorrectChars] = useState(0);
+  const [wpmHistory, setWpmHistory] = useState<{ time: number; wpm: number; raw: number; errors: number }[]>([]);
+  const [errorTimeline, setErrorTimeline] = useState<number[]>([]);
+  const [liveWpm, setLiveWpm] = useState(0);
+  const [liveRaw, setLiveRaw] = useState(0);
+  const [liveAcc, setLiveAcc] = useState(100);
+
+  // Refs
+  const inputRef = useRef<HTMLTextAreaElement>(null);
   const timerRef = useRef<ReturnType<typeof setInterval>>();
-  const wpmIntervalRef = useRef<ReturnType<typeof setInterval>>();
+  const statsRef = useRef<ReturnType<typeof setInterval>>();
   const startTimeRef = useRef(0);
-  const correctCharsAtStartRef = useRef(0);
+  const correctRef = useRef(0);
+  const incorrectRef = useRef(0);
+  const totalKeysRef = useRef(0);
+  const textContainerRef = useRef<HTMLDivElement>(null);
+  const wordRefs = useRef<(HTMLSpanElement | null)[]>([]);
+  const [lineOffset, setLineOffset] = useState(0);
 
-  // Generate initial text
-  useEffect(() => {
-    setText(generateText(mode, difficulty, language));
-  }, [mode, difficulty, language]);
+  // Save state
+  const [playerName, setPlayerName] = useState('');
+  const [saving, setSaving] = useState(false);
 
-  const newTest = useCallback(() => {
-    setTestState('idle');
-    setTyped('');
-    setTimeLeft(duration);
+  // ─── Generate words ───
+  const generateTest = useCallback(() => {
+    let w: string[];
+    if (mode === 'quote') {
+      const q = getQuote(quoteValue);
+      setCurrentQuote(q);
+      w = q.text.split(/\s+/);
+    } else if (mode === 'words') {
+      w = generateWords(wordValue, top200english, punctuation, numbers);
+    } else if (mode === 'zen') {
+      w = generateWords(200, top200english, punctuation, numbers);
+    } else {
+      // time mode: generate plenty
+      w = generateWords(300, top200english, punctuation, numbers);
+    }
+    setWords(w);
+    setWordIndex(0);
+    setCharIndex(0);
+    setInputBuffer('');
+    setWordResults([]);
+    setTimeLeft(mode === 'time' ? timeValue : 0);
+    setElapsed(0);
+    setCorrectChars(0);
+    setIncorrectChars(0);
     setWpmHistory([]);
-    setText(generateText(mode, difficulty, language));
-    if (timerRef.current) clearInterval(timerRef.current);
-    if (wpmIntervalRef.current) clearInterval(wpmIntervalRef.current);
-    setTimeout(() => inputRef.current?.focus(), 100);
-  }, [mode, difficulty, language, duration]);
-
-  const retrySameText = useCallback(() => {
+    setErrorTimeline([]);
+    setLiveWpm(0);
+    setLiveRaw(0);
+    setLiveAcc(100);
+    setConsecutiveErrors(0);
     setTestState('idle');
-    setTyped('');
-    setTimeLeft(duration);
-    setWpmHistory([]);
+    setLineOffset(0);
+    correctRef.current = 0;
+    incorrectRef.current = 0;
+    totalKeysRef.current = 0;
     if (timerRef.current) clearInterval(timerRef.current);
-    if (wpmIntervalRef.current) clearInterval(wpmIntervalRef.current);
-    setTimeout(() => inputRef.current?.focus(), 100);
-  }, [duration]);
+    if (statsRef.current) clearInterval(statsRef.current);
+    setTimeout(() => inputRef.current?.focus(), 50);
+  }, [mode, timeValue, wordValue, quoteValue, punctuation, numbers]);
 
-  // Start test on first keystroke
+  useEffect(() => { generateTest(); }, [generateTest]);
+
+  // ─── Start test ───
   const startTest = useCallback(() => {
     if (testState !== 'idle') return;
     setTestState('running');
-    setTimeLeft(duration);
     startTimeRef.current = Date.now();
-    correctCharsAtStartRef.current = 0;
 
-    timerRef.current = setInterval(() => {
-      setTimeLeft(prev => {
-        if (prev <= 1) {
-          clearInterval(timerRef.current);
-          clearInterval(wpmIntervalRef.current);
-          setTestState('finished');
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-
-    // Record WPM every 5 seconds
-    wpmIntervalRef.current = setInterval(() => {
-      setTyped(currentTyped => {
-        setText(currentText => {
-          const elapsed = (Date.now() - startTimeRef.current) / 1000 / 60;
-          if (elapsed > 0) {
-            let correct = 0;
-            for (let i = 0; i < currentTyped.length; i++) {
-              if (currentTyped[i] === currentText[i]) correct++;
-            }
-            const wpm = Math.round((correct / 5) / elapsed);
-            setWpmHistory(prev => [...prev, { time: Math.round((Date.now() - startTimeRef.current) / 1000), wpm }]);
+    // Timer
+    if (mode === 'time') {
+      setTimeLeft(timeValue);
+      timerRef.current = setInterval(() => {
+        setTimeLeft(prev => {
+          if (prev <= 1) {
+            clearInterval(timerRef.current);
+            clearInterval(statsRef.current);
+            if (soundOn) playComplete();
+            setTestState('finished');
+            return 0;
           }
-          return currentText;
+          return prev - 1;
         });
-        return currentTyped;
-      });
-    }, 5000);
-  }, [testState, duration]);
+        setElapsed(prev => prev + 1);
+      }, 1000);
+    } else {
+      timerRef.current = setInterval(() => {
+        setElapsed(prev => prev + 1);
+      }, 1000);
+    }
+
+    // WPM tracking every second
+    statsRef.current = setInterval(() => {
+      const elapsedMin = (Date.now() - startTimeRef.current) / 60000;
+      if (elapsedMin > 0) {
+        const wpm = Math.round((correctRef.current / 5) / elapsedMin);
+        const raw = Math.round((totalKeysRef.current / 5) / elapsedMin);
+        const acc = totalKeysRef.current > 0 ? Math.round((correctRef.current / totalKeysRef.current) * 100) : 100;
+        setLiveWpm(wpm);
+        setLiveRaw(raw);
+        setLiveAcc(acc);
+        setWpmHistory(prev => [...prev, {
+          time: Math.round((Date.now() - startTimeRef.current) / 1000),
+          wpm,
+          raw,
+          errors: incorrectRef.current,
+        }]);
+      }
+    }, 1000);
+  }, [testState, mode, timeValue, soundOn]);
+
+  // ─── End test ───
+  const endTest = useCallback(() => {
+    if (timerRef.current) clearInterval(timerRef.current);
+    if (statsRef.current) clearInterval(statsRef.current);
+    if (soundOn) playComplete();
+    setTestState('finished');
+    setElapsed(Math.round((Date.now() - startTimeRef.current) / 1000));
+  }, [soundOn]);
 
   useEffect(() => {
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
-      if (wpmIntervalRef.current) clearInterval(wpmIntervalRef.current);
+      if (statsRef.current) clearInterval(statsRef.current);
     };
   }, []);
 
-  // Stats calculation
-  const stats = useMemo(() => {
-    let correct = 0, incorrect = 0;
-    for (let i = 0; i < typed.length; i++) {
-      if (typed[i] === text[i]) correct++;
-      else incorrect++;
+  // ─── Line scroll logic ───
+  useEffect(() => {
+    if (!textContainerRef.current || wordRefs.current.length === 0) return;
+    const currentWordEl = wordRefs.current[wordIndex];
+    if (!currentWordEl) return;
+    const containerRect = textContainerRef.current.getBoundingClientRect();
+    const wordRect = currentWordEl.getBoundingClientRect();
+    const relativeTop = wordRect.top - containerRect.top + lineOffset;
+    // If cursor is past line 2 height (roughly 64px), scroll up
+    if (relativeTop > 64) {
+      setLineOffset(prev => prev + (relativeTop - 32));
     }
-    const elapsed = testState === 'finished' ? duration : Math.max(1, duration - timeLeft);
-    const minutes = elapsed / 60;
-    const wpm = minutes > 0 ? Math.round((correct / 5) / minutes) : 0;
-    const rawWpm = minutes > 0 ? Math.round((typed.length / 5) / minutes) : 0;
-    const accuracy = typed.length > 0 ? Math.round((correct / typed.length) * 100) : 100;
-    
-    // Count words
-    const typedWords = typed.split(' ');
-    const textWords = text.split(' ');
-    let correctWords = 0, incorrectWords = 0;
-    let wordStart = 0;
-    for (let w = 0; w < typedWords.length; w++) {
-      const tw = typedWords[w];
-      const expected = textWords[w] || '';
-      if (tw === expected) correctWords++;
-      else if (typed.length > wordStart) incorrectWords++;
-      wordStart += expected.length + 1;
-    }
+  }, [wordIndex]);
 
-    // Streak
-    let streak = 0, maxStreak = 0;
-    for (let i = typed.length - 1; i >= 0; i--) {
-      if (typed[i] === text[i]) { streak++; } else break;
-    }
-    for (let i = 0; i < typed.length; i++) {
-      if (typed[i] === text[i]) { maxStreak = Math.max(maxStreak, ++maxStreak); }
-      else maxStreak = 0;
-    }
-
-    // Consistency
-    const consistency = wpmHistory.length > 1
-      ? Math.round(100 - (Math.sqrt(wpmHistory.reduce((s, p) => s + Math.pow(p.wpm - wpm, 2), 0) / wpmHistory.length) / Math.max(wpm, 1)) * 100)
-      : 100;
-
-    return { wpm, rawWpm, accuracy, correct, incorrect, correctWords, incorrectWords, streak, consistency: Math.max(0, Math.min(100, consistency)), totalKeystrokes: typed.length };
-  }, [typed, text, timeLeft, duration, testState, wpmHistory]);
-
-  const handleInput = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    // We use a hidden input approach — but since we need character-by-character, we track via keydown
-  }, []);
-
+  // ─── Key handler ───
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
-    // Detect caps lock
     if (e.getModifierState) setCapsLock(e.getModifierState('CapsLock'));
 
     // Block paste
     if ((e.ctrlKey || e.metaKey) && e.key === 'v') { e.preventDefault(); return; }
 
-    // Tab+Enter = restart
-    if (e.key === 'Tab') { e.preventDefault(); newTest(); return; }
-
-    if (testState === 'finished') return;
-
-    if (e.key === 'Backspace') {
+    // Tab = restart
+    if (e.key === 'Tab') {
       e.preventDefault();
-      setTyped(prev => prev.slice(0, -1));
-      if (testState === 'idle') startTest();
+      generateTest();
       return;
     }
 
-    if (e.key.length === 1) {
+    // Escape = stop
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      if (testState === 'running') {
+        if (mode === 'zen') endTest();
+        else generateTest();
+      }
+      return;
+    }
+
+    if (testState === 'finished') return;
+
+    const currentWord = words[wordIndex] || '';
+
+    // Backspace
+    if (e.key === 'Backspace') {
+      e.preventDefault();
+      if (e.ctrlKey) {
+        // Delete whole word
+        setInputBuffer('');
+        setCharIndex(0);
+      } else if (inputBuffer.length > 0) {
+        setInputBuffer(prev => prev.slice(0, -1));
+        setCharIndex(prev => Math.max(0, prev - 1));
+      }
+      return;
+    }
+
+    // Space = advance word
+    if (e.key === ' ') {
+      e.preventDefault();
+      if (inputBuffer.length === 0) return;
+      if (testState === 'idle') startTest();
+
+      // Record result
+      const target = currentWord;
+      const typed = inputBuffer;
+      setWordResults(prev => [...prev, { typed, target }]);
+
+      // Count correct/incorrect for this word
+      for (let i = 0; i < Math.max(typed.length, target.length); i++) {
+        if (i < typed.length && i < target.length && typed[i] === target[i]) {
+          correctRef.current++;
+          setCorrectChars(c => c + 1);
+        } else {
+          incorrectRef.current++;
+          setIncorrectChars(c => c + 1);
+        }
+        totalKeysRef.current++;
+      }
+
+      setWordIndex(prev => prev + 1);
+      setCharIndex(0);
+      setInputBuffer('');
+      setConsecutiveErrors(0);
+
+      // Check if test complete (words/quote mode)
+      if (mode === 'words' && wordIndex + 1 >= words.length) {
+        endTest();
+      } else if (mode === 'quote' && wordIndex + 1 >= words.length) {
+        endTest();
+      }
+
+      // Zen mode: generate more words
+      if (mode === 'zen' && wordIndex + 1 >= words.length - 20) {
+        setWords(prev => [...prev, ...generateWords(100, top200english, punctuation, numbers)]);
+      }
+
+      return;
+    }
+
+    // Regular character
+    if (e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) {
       e.preventDefault();
       if (testState === 'idle') startTest();
-      setTyped(prev => {
-        if (prev.length >= text.length) return prev;
-        return prev + e.key;
-      });
+
+      const isCorrect = charIndex < currentWord.length && e.key === currentWord[charIndex];
+
+      if (isCorrect) {
+        if (soundOn) playClick();
+        setConsecutiveErrors(0);
+      } else {
+        if (soundOn) playError();
+        setConsecutiveErrors(prev => {
+          const next = prev + 1;
+          if (next >= 5) { setShake(true); setTimeout(() => setShake(false), 300); }
+          return next;
+        });
+        setErrorTimeline(prev => [...prev, Math.round((Date.now() - startTimeRef.current) / 1000)]);
+      }
+
+      setInputBuffer(prev => prev + e.key);
+      setCharIndex(prev => prev + 1);
     }
-  }, [testState, text, startTest, newTest]);
+  }, [testState, words, wordIndex, charIndex, inputBuffer, mode, punctuation, numbers, soundOn, startTest, endTest, generateTest]);
 
-  // Auto-focus
-  useEffect(() => {
-    inputRef.current?.focus();
-  }, []);
+  // ─── Results calculation ───
+  const results = useMemo(() => {
+    if (testState !== 'finished') return null;
+    const totalCorrect = correctChars;
+    const totalIncorrect = incorrectChars;
+    const total = totalCorrect + totalIncorrect;
+    const elapsedMin = Math.max(elapsed, 1) / 60;
+    const wpm = Math.round((totalCorrect / 5) / elapsedMin);
+    const rawWpm = Math.round((total / 5) / elapsedMin);
+    const accuracy = total > 0 ? Math.round((totalCorrect / total) * 100) : 100;
 
-  // Save score
+    // Consistency from WPM history
+    const wpmValues = wpmHistory.map(h => h.wpm);
+    const mean = wpmValues.length > 0 ? wpmValues.reduce((a, b) => a + b, 0) / wpmValues.length : 0;
+    const variance = wpmValues.length > 1
+      ? wpmValues.reduce((s, v) => s + Math.pow(v - mean, 2), 0) / wpmValues.length
+      : 0;
+    const stdDev = Math.sqrt(variance);
+    const consistency = mean > 0 ? Math.max(0, Math.min(100, Math.round(100 - (stdDev / mean) * 100))) : 100;
+
+    const missedWords = wordResults.filter(r => r.typed !== r.target).length;
+
+    return { wpm, rawWpm, accuracy, consistency, totalCorrect, totalIncorrect, missedWords, wordCount: wordResults.length };
+  }, [testState, correctChars, incorrectChars, elapsed, wpmHistory, wordResults]);
+
+  // ─── Save score ───
   const saveScore = async () => {
-    if (!playerName.trim()) return;
+    if (!playerName.trim() || !results) return;
+    setSaving(true);
+    const modeVal = mode === 'time' ? String(timeValue) : mode === 'words' ? String(wordValue) : mode === 'quote' ? quoteValue : 'zen';
     const { error } = await supabase.from('typing_scores' as any).insert({
       player_name: playerName.trim(),
-      wpm: stats.wpm,
-      accuracy: stats.accuracy,
-      mode: mode,
-      duration: duration,
+      wpm: results.wpm,
+      raw_wpm: results.rawWpm,
+      accuracy: results.accuracy,
+      consistency: results.consistency,
+      mode,
+      mode_value: modeVal,
+      duration_seconds: elapsed,
+      word_count: results.wordCount,
+      correct_chars: results.totalCorrect,
+      incorrect_chars: results.totalIncorrect,
     } as any);
+    setSaving(false);
     if (error) {
       toast({ title: '// ERROR', description: error.message, variant: 'destructive' });
     } else {
-      toast({ title: '// SCORE LOGGED TO DATABASE' });
-      setShowSaveModal(false);
+      toast({ title: '// SCORE SAVED' });
       setPlayerName('');
     }
   };
 
-  // Fetch leaderboard
-  const fetchLeaderboard = async () => {
-    const { data } = await supabase
-      .from('typing_scores' as any)
-      .select('*')
-      .order('wpm', { ascending: false })
-      .limit(10) as any;
-    setLeaderboard(data || []);
-    setShowLeaderboard(true);
-  };
+  // ─── Config change ───
+  const changeConfig = useCallback((fn: () => void) => {
+    fn();
+    // Will regenerate via useEffect
+  }, []);
 
-  // Render typed text with character coloring
-  const renderText = () => {
-    const chars = text.split('');
-    // Figure out visible window (roughly 3 lines worth, ~180 chars)
-    const lineWidth = 60;
-    const currentLine = Math.floor(typed.length / lineWidth);
-    const startChar = Math.max(0, (currentLine - 1) * lineWidth);
-    const endChar = Math.min(chars.length, startChar + lineWidth * 4);
+  // ─── Progress ───
+  const progressPct = useMemo(() => {
+    if (mode === 'time') return (timeLeft / timeValue) * 100;
+    if (mode === 'words') return (wordIndex / words.length) * 100;
+    if (mode === 'quote') return (wordIndex / words.length) * 100;
+    return 0;
+  }, [mode, timeLeft, timeValue, wordIndex, words.length]);
 
-    return (
-      <div className="font-mono text-lg sm:text-xl leading-relaxed tracking-wide select-none relative overflow-hidden" style={{ minHeight: '6em' }}>
-        {chars.slice(startChar, endChar).map((char, i) => {
-          const idx = startChar + i;
-          const isTyped = idx < typed.length;
-          const isCurrent = idx === typed.length;
-          const isCorrect = isTyped && typed[idx] === char;
-          const isIncorrect = isTyped && typed[idx] !== char;
+  const rating = results ? getRating(results.wpm) : null;
 
-          return (
-            <span
-              key={idx}
-              className={`relative inline ${
-                isCurrent ? 'bg-primary/20' : ''
-              } ${
-                isCorrect ? 'text-primary' :
-                isIncorrect ? 'text-destructive bg-destructive/15' :
-                'text-muted-foreground/40'
-              }`}
-            >
-              {isCurrent && (
-                <span className="absolute left-0 top-0 bottom-0 w-[2px] bg-primary animate-pulse" />
-              )}
-              {char === ' ' && isIncorrect ? '·' : char}
-            </span>
-          );
-        })}
-      </div>
-    );
-  };
-
-  const rating = getRating(stats.wpm);
-  const timerPct = (timeLeft / duration) * 100;
-  const isLowTime = timeLeft <= 10 && testState === 'running';
-
+  // ─── Render ───
   return (
-    <ToolLayout title='> TYPING_SPEED.exe' subtitle="// Measure your WPM, accuracy and reaction time">
-      <div className="space-y-4">
-        {/* Mode tabs */}
-        <div className="flex flex-wrap gap-2">
-          {MODES.map(m => (
-            <button
-              key={m}
-              onClick={() => { setMode(m); newTest(); }}
-              className={`font-mono text-xs px-3 py-1.5 rounded border transition-all ${
-                mode === m
-                  ? 'border-primary bg-primary/10 text-primary shadow-[0_0_8px_hsl(var(--primary)/0.3)]'
-                  : 'border-primary/15 text-muted-foreground hover:text-primary hover:border-primary/40'
-              }`}
-            >
-              {m}
-            </button>
-          ))}
-        </div>
-
-        {/* Settings bar */}
-        <div className="flex flex-wrap items-center gap-3 glass-card rounded-lg p-3">
-          {/* Duration */}
-          <div className="flex gap-1">
-            {DURATIONS.map(d => (
-              <button
-                key={d}
-                onClick={() => { setDuration(d); setTimeLeft(d); if (testState === 'idle') setTimeLeft(d); }}
-                className={`font-mono text-[10px] px-2 py-1 rounded border transition-all ${
-                  duration === d
-                    ? 'border-secondary bg-secondary/10 text-secondary'
-                    : 'border-muted text-muted-foreground hover:border-secondary/40'
-                }`}
-              >
-                {d}s
-              </button>
-            ))}
-          </div>
-
-          <span className="text-muted-foreground/30">|</span>
-
-          {/* Difficulty */}
-          <div className="flex gap-1">
-            {DIFFICULTIES.map(d => (
-              <button
-                key={d}
-                onClick={() => { setDifficulty(d); }}
-                className={`font-mono text-[10px] px-2 py-1 rounded border transition-all ${
-                  difficulty === d
-                    ? 'border-primary bg-primary/10 text-primary'
-                    : 'border-muted text-muted-foreground hover:border-primary/40'
-                }`}
-              >
-                {d}
-              </button>
-            ))}
-          </div>
-
-          <span className="text-muted-foreground/30">|</span>
-
-          {/* Language */}
-          <div className="flex gap-1">
-            {(['ENGLISH', 'VIETNAMESE'] as Language[]).map(l => (
-              <button
-                key={l}
-                onClick={() => { setLanguage(l); }}
-                className={`font-mono text-[10px] px-2 py-1 rounded border transition-all ${
-                  language === l
-                    ? 'border-secondary bg-secondary/10 text-secondary'
-                    : 'border-muted text-muted-foreground hover:border-secondary/40'
-                }`}
-              >
-                {l}
-              </button>
-            ))}
-          </div>
-
-          <span className="text-muted-foreground/30">|</span>
-
-          <button onClick={newTest} className="font-mono text-[10px] px-3 py-1 rounded border border-primary/30 text-primary hover:bg-primary/10 transition-colors">
-            [_NEW TEST]
-          </button>
-        </div>
-
-        {/* Caps lock warning */}
-        {capsLock && (
-          <div className="font-mono text-[10px] text-destructive bg-destructive/10 border border-destructive/30 rounded px-3 py-1 inline-block">
-            // CAPS LOCK ON
-          </div>
-        )}
-
-        {/* Timer + Live stats */}
-        {testState !== 'finished' && (
-          <div className="flex flex-wrap items-center gap-3">
-            {/* Timer circle */}
-            <div className="relative w-16 h-16 flex-shrink-0">
-              <svg className="w-full h-full -rotate-90" viewBox="0 0 64 64">
-                <circle cx="32" cy="32" r="28" fill="none" stroke="hsl(var(--muted)/0.2)" strokeWidth="4" />
-                <circle
-                  cx="32" cy="32" r="28" fill="none"
-                  stroke={isLowTime ? 'hsl(var(--destructive))' : 'hsl(var(--primary))'}
-                  strokeWidth="4"
-                  strokeLinecap="round"
-                  strokeDasharray={`${2 * Math.PI * 28}`}
-                  strokeDashoffset={`${2 * Math.PI * 28 * (1 - timerPct / 100)}`}
-                  className="transition-all duration-1000"
-                />
-              </svg>
-              <span className={`absolute inset-0 flex items-center justify-center font-mono text-sm font-bold ${isLowTime ? 'text-destructive animate-pulse' : 'text-primary'}`}>
-                {timeLeft}
-              </span>
-            </div>
-
-            {/* Live stat cards */}
-            <div className="flex flex-wrap gap-2 flex-1">
-              <div className="glass-card rounded px-3 py-2 text-center min-w-[70px]">
-                <div className="font-display text-lg text-primary">{stats.wpm}</div>
-                <div className="font-mono text-[9px] text-muted-foreground">WPM</div>
-              </div>
-              <div className="glass-card rounded px-3 py-2 text-center min-w-[70px]">
-                <div className="font-display text-lg text-secondary">{stats.accuracy}%</div>
-                <div className="font-mono text-[9px] text-muted-foreground">ACC</div>
-              </div>
-              <div className="glass-card rounded px-3 py-2 text-center min-w-[60px]">
-                <div className="font-mono text-sm text-primary">{stats.correct}</div>
-                <div className="font-mono text-[9px] text-muted-foreground">CORRECT</div>
-              </div>
-              <div className="glass-card rounded px-3 py-2 text-center min-w-[60px]">
-                <div className="font-mono text-sm text-destructive">{stats.incorrect}</div>
-                <div className="font-mono text-[9px] text-muted-foreground">ERRORS</div>
-              </div>
-              <div className="glass-card rounded px-3 py-2 text-center min-w-[60px]">
-                <div className="font-mono text-sm text-foreground">{stats.streak}</div>
-                <div className="font-mono text-[9px] text-muted-foreground">STREAK</div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Main test area */}
-        {testState !== 'finished' && (
-          <div
-            className="glass-card rounded-lg p-4 sm:p-6 cursor-text relative"
-            onClick={() => inputRef.current?.focus()}
+    <div className="min-h-screen bg-background crt-overlay noise-overlay flex flex-col">
+      {/* Header */}
+      <div className="max-w-[900px] w-full mx-auto px-4 pt-6 pb-2 flex items-center justify-between">
+        <Link to="/tools" className="font-display text-lg text-primary hover:opacity-80 transition-opacity">
+          {'> TYPE.exe'}
+        </Link>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => setSoundOn(!soundOn)}
+            className={`font-mono text-[10px] px-2 py-1 rounded border transition-all ${soundOn ? 'border-primary text-primary' : 'border-muted text-muted-foreground'}`}
           >
-            {renderText()}
+            {soundOn ? '♪ ON' : '♪ OFF'}
+          </button>
+          <Link to="/tools/typing-speed/leaderboard" className="text-muted-foreground hover:text-primary transition-colors">
+            <Trophy size={18} />
+          </Link>
+        </div>
+      </div>
 
-            {/* Hidden input */}
-            <input
-              ref={inputRef}
-              className="absolute opacity-0 w-0 h-0"
-              onKeyDown={handleKeyDown}
-              onChange={handleInput}
-              onPaste={e => e.preventDefault()}
-              autoFocus
-            />
+      <div className="max-w-[900px] w-full mx-auto px-4 flex-1 flex flex-col">
+        {/* Config bar */}
+        <div className="flex flex-wrap items-center justify-center gap-1 py-4">
+          {/* Punctuation & numbers */}
+          <div className="flex items-center gap-1 mr-2">
+            <button
+              onClick={() => changeConfig(() => setPunctuation(p => !p))}
+              className={`font-mono text-xs px-2.5 py-1 rounded transition-all ${punctuation ? 'text-primary' : 'text-muted-foreground/40 hover:text-muted-foreground/70'}`}
+            >
+              @ punctuation
+            </button>
+            <button
+              onClick={() => changeConfig(() => setNumbers(n => !n))}
+              className={`font-mono text-xs px-2.5 py-1 rounded transition-all ${numbers ? 'text-primary' : 'text-muted-foreground/40 hover:text-muted-foreground/70'}`}
+            >
+              # numbers
+            </button>
+          </div>
 
-            {/* Focus overlay */}
-            {testState === 'idle' && (
-              <div className="absolute inset-0 flex items-center justify-center bg-background/60 rounded-lg backdrop-blur-sm">
-                <p className="font-mono text-sm text-muted-foreground">
-                  Click here or start typing to begin<span className="blink text-primary ml-1">█</span>
-                </p>
-              </div>
+          <span className="text-muted-foreground/20 mx-1">|</span>
+
+          {/* Mode */}
+          <div className="flex items-center gap-1">
+            {(['time', 'words', 'quote', 'zen'] as TestMode[]).map(m => (
+              <button
+                key={m}
+                onClick={() => changeConfig(() => setMode(m))}
+                className={`font-mono text-xs px-2.5 py-1 rounded transition-all ${mode === m ? 'text-primary' : 'text-muted-foreground/40 hover:text-muted-foreground/70'}`}
+              >
+                {m}
+              </button>
+            ))}
+          </div>
+
+          <span className="text-muted-foreground/20 mx-1">|</span>
+
+          {/* Mode values */}
+          <div className="flex items-center gap-1">
+            {mode === 'time' && TIME_VALUES.map(v => (
+              <button key={v} onClick={() => changeConfig(() => setTimeValue(v))}
+                className={`font-mono text-xs px-2.5 py-1 rounded transition-all ${timeValue === v ? 'text-primary' : 'text-muted-foreground/40 hover:text-muted-foreground/70'}`}>
+                {v}
+              </button>
+            ))}
+            {mode === 'words' && WORD_VALUES.map(v => (
+              <button key={v} onClick={() => changeConfig(() => setWordValue(v))}
+                className={`font-mono text-xs px-2.5 py-1 rounded transition-all ${wordValue === v ? 'text-primary' : 'text-muted-foreground/40 hover:text-muted-foreground/70'}`}>
+                {v}
+              </button>
+            ))}
+            {mode === 'quote' && QUOTE_VALUES.map(v => (
+              <button key={v} onClick={() => changeConfig(() => setQuoteValue(v))}
+                className={`font-mono text-xs px-2.5 py-1 rounded transition-all ${quoteValue === v ? 'text-primary' : 'text-muted-foreground/40 hover:text-muted-foreground/70'}`}>
+                {v}
+              </button>
+            ))}
+            {mode === 'zen' && (
+              <span className="font-mono text-xs text-muted-foreground/40">∞</span>
             )}
           </div>
-        )}
+        </div>
 
-        {/* RESULTS SCREEN */}
-        <AnimatePresence>
-          {testState === 'finished' && !showLeaderboard && (
+        {/* Test area */}
+        <AnimatePresence mode="wait">
+          {testState !== 'finished' ? (
             <motion.div
-              initial={{ opacity: 0, scale: 0.95, clipPath: 'inset(50% 50% 50% 50%)' }}
-              animate={{ opacity: 1, scale: 1, clipPath: 'inset(0% 0% 0% 0%)' }}
-              transition={{ duration: 0.5, ease: 'easeOut' }}
-              className="glass-card rounded-lg p-6 space-y-6"
+              key="test"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.2 }}
+              className="flex-1 flex flex-col justify-center"
             >
-              {/* Big WPM + Rating */}
-              <div className="text-center space-y-2">
-                <div className="font-display text-6xl sm:text-7xl text-primary drop-shadow-[0_0_20px_hsl(var(--primary)/0.4)]">
-                  {stats.wpm}
-                </div>
-                <p className="font-mono text-xs text-muted-foreground">WORDS PER MINUTE</p>
-                <div className={`font-display text-lg ${rating.cls}`}>
-                  {rating.label}
-                </div>
+              {/* Stats row */}
+              <div className={`flex gap-6 mb-4 font-mono text-sm transition-all duration-300 ${testState === 'running' ? 'opacity-100' : 'opacity-30'}`}>
+                <span className="text-primary">{liveWpm} <span className="text-muted-foreground/50 text-xs">wpm</span></span>
+                <span className="text-secondary">{liveAcc}% <span className="text-muted-foreground/50 text-xs">acc</span></span>
+                <span className="text-muted-foreground">{liveRaw} <span className="text-muted-foreground/50 text-xs">raw</span></span>
+                {mode === 'time' && (
+                  <span className={`${timeLeft <= 10 && testState === 'running' ? 'text-destructive animate-pulse' : 'text-muted-foreground'}`}>
+                    {timeLeft}s
+                  </span>
+                )}
+                {mode === 'words' && (
+                  <span className="text-muted-foreground">{wordIndex}/{words.length}</span>
+                )}
+                {mode === 'quote' && (
+                  <span className="text-muted-foreground">{wordIndex}/{words.length}</span>
+                )}
               </div>
 
-              {/* Accuracy */}
-              <div className="text-center">
-                <span className={`font-display text-3xl ${
-                  stats.accuracy >= 95 ? 'text-primary' :
-                  stats.accuracy >= 80 ? 'text-secondary' : 'text-destructive'
-                }`}>
-                  {stats.accuracy}%
-                </span>
-                <p className="font-mono text-xs text-muted-foreground">ACCURACY</p>
-              </div>
+              {/* Text display */}
+              <div
+                ref={textContainerRef}
+                className={`relative overflow-hidden cursor-text ${shake ? 'animate-[shake_0.3s_ease-in-out]' : ''}`}
+                style={{ height: '6rem' }}
+                onClick={() => inputRef.current?.focus()}
+              >
+                <div
+                  className="transition-transform duration-200 ease-out"
+                  style={{ transform: `translateY(-${lineOffset}px)` }}
+                >
+                  {words.map((word, wi) => {
+                    const isActive = wi === wordIndex;
+                    const result = wordResults[wi];
+                    const typed = result?.typed;
+                    const isFuture = wi > wordIndex;
+                    const isPast = wi < wordIndex;
 
-              {/* Secondary stats grid */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                {[
-                  { label: 'Raw WPM', value: stats.rawWpm },
-                  { label: 'Correct Words', value: stats.correctWords },
-                  { label: 'Incorrect Words', value: stats.incorrectWords },
-                  { label: 'Total Keystrokes', value: stats.totalKeystrokes },
-                  { label: 'Correct Chars', value: stats.correct },
-                  { label: 'Error Chars', value: stats.incorrect },
-                  { label: 'Duration', value: `${duration}s` },
-                  { label: 'Consistency', value: `${stats.consistency}%` },
-                ].map(s => (
-                  <div key={s.label} className="bg-muted/20 rounded p-3 text-center border border-primary/10">
-                    <div className="font-mono text-sm text-foreground">{s.value}</div>
-                    <div className="font-mono text-[9px] text-muted-foreground">{s.label}</div>
+                    return (
+                      <span
+                        key={wi}
+                        ref={el => { wordRefs.current[wi] = el; }}
+                        className="inline-block mr-[0.5em]"
+                      >
+                        {word.split('').map((char, ci) => {
+                          let color = 'text-[#646669]'; // untyped
+
+                          if (isPast && typed) {
+                            if (ci < typed.length) {
+                              color = typed[ci] === char ? 'text-primary' : 'text-[#ca4754]';
+                            } else {
+                              color = 'text-[#ca4754]/60'; // missed chars
+                            }
+                          } else if (isActive) {
+                            if (ci < inputBuffer.length) {
+                              color = inputBuffer[ci] === char ? 'text-primary' : 'text-[#ca4754]';
+                            }
+                          }
+
+                          return (
+                            <span key={ci} className={`relative font-mono text-[1.4rem] leading-[2rem] ${color}`}>
+                              {isActive && ci === inputBuffer.length && (
+                                <span
+                                  className={`absolute left-0 top-[2px] bottom-[2px] w-[2px] bg-primary ${testState === 'idle' || (Date.now() - startTimeRef.current) > 500 ? 'animate-pulse' : ''}`}
+                                  style={{ transition: 'left 0.08s ease' }}
+                                />
+                              )}
+                              {char}
+                            </span>
+                          );
+                        })}
+                        {/* Extra characters typed beyond word length */}
+                        {isActive && inputBuffer.length > word.length && (
+                          inputBuffer.slice(word.length).split('').map((c, ei) => (
+                            <span key={`extra-${ei}`} className="font-mono text-[1.4rem] leading-[2rem] text-[#7e2a33]">{c}</span>
+                          ))
+                        )}
+                        {isPast && typed && typed.length > word.length && (
+                          typed.slice(word.length).split('').map((c, ei) => (
+                            <span key={`extra-${ei}`} className="font-mono text-[1.4rem] leading-[2rem] text-[#7e2a33]">{c}</span>
+                          ))
+                        )}
+                      </span>
+                    );
+                  })}
+                </div>
+
+                {/* Hidden input */}
+                <textarea
+                  ref={inputRef}
+                  className="absolute inset-0 opacity-0 w-full h-full resize-none cursor-text"
+                  onKeyDown={handleKeyDown}
+                  onPaste={e => e.preventDefault()}
+                  autoFocus
+                  autoComplete="off"
+                  autoCorrect="off"
+                  autoCapitalize="off"
+                  spellCheck={false}
+                />
+
+                {/* Focus overlay */}
+                {testState === 'idle' && document.activeElement !== inputRef.current && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-background/40 backdrop-blur-[2px] rounded">
+                    <p className="font-mono text-sm text-muted-foreground/60">
+                      Click here or start typing
+                    </p>
                   </div>
-                ))}
+                )}
               </div>
 
-              {/* WPM Chart */}
-              {wpmHistory.length > 1 && (
-                <div className="h-48">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={wpmHistory}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--muted)/0.2)" />
-                      <XAxis dataKey="time" tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }} label={{ value: 'seconds', position: 'insideBottom', offset: -5, fontSize: 10, fill: 'hsl(var(--muted-foreground))' }} />
-                      <YAxis tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }} />
-                      <Line type="monotone" dataKey="wpm" stroke="hsl(var(--primary))" strokeWidth={2} dot={{ fill: 'hsl(var(--primary))', r: 3 }} />
-                    </LineChart>
-                  </ResponsiveContainer>
+              {/* Caps lock warning */}
+              {capsLock && (
+                <div className="font-mono text-[10px] text-destructive mt-2">
+                  CAPS LOCK
                 </div>
               )}
 
-              {/* Action buttons */}
-              <div className="flex flex-wrap gap-3 justify-center">
-                <button onClick={retrySameText} className="font-mono text-xs px-4 py-2 rounded border border-primary/30 text-primary hover:bg-primary/10 transition-colors">
-                  [_RETRY SAME TEXT]
-                </button>
-                <button onClick={newTest} className="font-mono text-xs px-4 py-2 rounded border border-secondary/30 text-secondary hover:bg-secondary/10 transition-colors">
-                  [_NEW TEST]
-                </button>
-                <button onClick={() => setShowSaveModal(true)} className="font-mono text-xs px-4 py-2 rounded bg-primary/10 border border-primary text-primary hover:bg-primary/20 transition-colors shadow-[0_0_8px_hsl(var(--primary)/0.3)]">
-                  [_SAVE SCORE]
-                </button>
-                <button onClick={fetchLeaderboard} className="font-mono text-xs px-4 py-2 rounded border border-muted text-muted-foreground hover:text-primary hover:border-primary/40 transition-colors">
-                  [_LEADERBOARD]
-                </button>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {/* Save Modal */}
-        <AnimatePresence>
-          {showSaveModal && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm"
-              onClick={() => setShowSaveModal(false)}
-            >
-              <motion.div
-                initial={{ scale: 0.9 }}
-                animate={{ scale: 1 }}
-                exit={{ scale: 0.9 }}
-                className="glass-card rounded-lg p-6 w-full max-w-sm space-y-4"
-                onClick={e => e.stopPropagation()}
-              >
-                <h3 className="font-display text-sm text-primary">SAVE SCORE</h3>
-                <input
-                  value={playerName}
-                  onChange={e => setPlayerName(e.target.value)}
-                  placeholder="Enter your name..."
-                  className="w-full px-3 py-2 bg-muted/30 border border-primary/20 rounded font-mono text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary/60"
-                  autoFocus
-                  onKeyDown={e => { if (e.key === 'Enter') saveScore(); }}
-                />
-                <div className="flex gap-2">
-                  <button onClick={saveScore} className="flex-1 font-mono text-xs py-2 rounded bg-primary/10 border border-primary text-primary hover:bg-primary/20 transition-colors">
-                    [_SAVE]
-                  </button>
-                  <button onClick={() => setShowSaveModal(false)} className="font-mono text-xs py-2 px-4 rounded border border-muted text-muted-foreground hover:text-foreground transition-colors">
-                    [_CANCEL]
-                  </button>
+              {/* Progress bar */}
+              {testState === 'running' && mode !== 'zen' && (
+                <div className="mt-4 h-[3px] bg-muted/20 rounded-full overflow-hidden">
+                  <div
+                    className={`h-full transition-all duration-300 rounded-full ${
+                      mode === 'time'
+                        ? timeLeft <= 10 ? 'bg-destructive' : 'bg-primary'
+                        : 'bg-primary'
+                    }`}
+                    style={{
+                      width: `${mode === 'time' ? progressPct : progressPct}%`,
+                    }}
+                  />
                 </div>
-              </motion.div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+              )}
 
-        {/* Inline Leaderboard */}
-        <AnimatePresence>
-          {showLeaderboard && testState === 'finished' && (
+              {/* Quote attribution */}
+              {mode === 'quote' && currentQuote && (
+                <p className="font-mono text-[10px] text-muted-foreground/30 mt-3">— {currentQuote.source}</p>
+              )}
+            </motion.div>
+          ) : (
+            // ─── Results ───
             <motion.div
+              key="results"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="glass-card rounded-lg p-4 space-y-3"
+              transition={{ duration: 0.4 }}
+              className="flex-1 flex flex-col justify-center py-8"
             >
-              <div className="flex items-center justify-between">
-                <h3 className="font-display text-xs text-primary">TOP 10 LEADERBOARD</h3>
-                <button onClick={() => setShowLeaderboard(false)} className="font-mono text-[10px] text-muted-foreground hover:text-primary">
-                  [_CLOSE]
-                </button>
-              </div>
-              <div className="overflow-x-auto">
-                <table className="w-full font-mono text-[10px]">
-                  <thead>
-                    <tr className="text-muted-foreground border-b border-primary/10">
-                      <th className="text-left py-1 px-2">#</th>
-                      <th className="text-left py-1 px-2">Player</th>
-                      <th className="text-right py-1 px-2">WPM</th>
-                      <th className="text-right py-1 px-2">ACC</th>
-                      <th className="text-left py-1 px-2">Mode</th>
-                      <th className="text-right py-1 px-2">Date</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {leaderboard.map((row: any, i: number) => (
-                      <tr
-                        key={row.id}
-                        className={`border-b border-primary/5 ${
-                          i === 0 ? 'text-primary shadow-[0_0_8px_hsl(var(--primary)/0.2)]' :
-                          i === 1 ? 'text-secondary' :
-                          i === 2 ? 'text-destructive' : 'text-foreground'
-                        }`}
-                      >
-                        <td className="py-1.5 px-2">{i + 1}</td>
-                        <td className="py-1.5 px-2">{row.player_name}</td>
-                        <td className="py-1.5 px-2 text-right">{row.wpm}</td>
-                        <td className="py-1.5 px-2 text-right">{row.accuracy}%</td>
-                        <td className="py-1.5 px-2">{row.mode}</td>
-                        <td className="py-1.5 px-2 text-right">{new Date(row.created_at).toLocaleDateString()}</td>
-                      </tr>
-                    ))}
-                    {leaderboard.length === 0 && (
-                      <tr><td colSpan={6} className="text-center py-4 text-muted-foreground">// No scores yet</td></tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
+              {results && (
+                <div className="space-y-8">
+                  {/* Main stats */}
+                  <div className="flex flex-col sm:flex-row gap-8 items-start">
+                    {/* Left: WPM + ACC */}
+                    <div className="space-y-4">
+                      <div>
+                        <p className="font-mono text-xs text-muted-foreground/50 mb-1">wpm</p>
+                        <p className="font-display text-6xl text-primary drop-shadow-[0_0_20px_hsl(var(--primary)/0.3)]">
+                          {results.wpm}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="font-mono text-xs text-muted-foreground/50 mb-1">acc</p>
+                        <p className={`font-display text-4xl ${
+                          results.accuracy >= 95 ? 'text-primary' :
+                          results.accuracy >= 80 ? 'text-secondary' : 'text-destructive'
+                        }`}>
+                          {results.accuracy}%
+                        </p>
+                      </div>
+                      {rating && (
+                        <div className={rating.cls}>{rating.label}</div>
+                      )}
+                    </div>
+
+                    {/* Right: Secondary stats */}
+                    <div className="grid grid-cols-2 gap-x-8 gap-y-3 font-mono text-sm flex-1">
+                      <div>
+                        <p className="text-muted-foreground/50 text-xs">raw wpm</p>
+                        <p className="text-foreground">{results.rawWpm}</p>
+                      </div>
+                      <div>
+                        <p className="text-muted-foreground/50 text-xs">consistency</p>
+                        <p className="text-foreground">{results.consistency}%</p>
+                      </div>
+                      <div>
+                        <p className="text-muted-foreground/50 text-xs">correct chars</p>
+                        <p className="text-primary">{results.totalCorrect}</p>
+                      </div>
+                      <div>
+                        <p className="text-muted-foreground/50 text-xs">incorrect chars</p>
+                        <p className="text-destructive">{results.totalIncorrect}</p>
+                      </div>
+                      <div>
+                        <p className="text-muted-foreground/50 text-xs">test type</p>
+                        <p className="text-foreground">{mode} {mode === 'time' ? timeValue : mode === 'words' ? wordValue : mode === 'quote' ? quoteValue : ''}</p>
+                      </div>
+                      <div>
+                        <p className="text-muted-foreground/50 text-xs">time</p>
+                        <p className="text-foreground">{elapsed}s</p>
+                      </div>
+                      <div>
+                        <p className="text-muted-foreground/50 text-xs">words</p>
+                        <p className="text-foreground">{results.wordCount}</p>
+                      </div>
+                      <div>
+                        <p className="text-muted-foreground/50 text-xs">missed words</p>
+                        <p className="text-foreground">{results.missedWords}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Chart */}
+                  {wpmHistory.length > 1 && (
+                    <div className="h-48">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <LineChart data={wpmHistory}>
+                          <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--muted)/0.15)" />
+                          <XAxis dataKey="time" tick={{ fontSize: 10, fill: '#646669' }} />
+                          <YAxis tick={{ fontSize: 10, fill: '#646669' }} />
+                          <Tooltip
+                            contentStyle={{ background: 'hsl(var(--background))', border: '1px solid hsl(var(--primary)/0.2)', borderRadius: '4px', fontFamily: 'JetBrains Mono', fontSize: '11px' }}
+                            labelFormatter={v => `${v}s`}
+                          />
+                          <Line type="monotone" dataKey="wpm" stroke="hsl(var(--primary))" strokeWidth={2} dot={false} name="WPM" />
+                          <Line type="monotone" dataKey="raw" stroke="hsl(var(--primary)/0.3)" strokeWidth={1} strokeDasharray="4 4" dot={false} name="Raw" />
+                        </LineChart>
+                      </ResponsiveContainer>
+                    </div>
+                  )}
+
+                  {/* Actions */}
+                  <div className="flex flex-wrap items-center gap-3">
+                    <button onClick={generateTest} className="font-mono text-xs px-4 py-2 rounded bg-primary/10 border border-primary text-primary hover:bg-primary/20 transition-colors">
+                      [_NEXT TEST]
+                    </button>
+                    <button onClick={() => { setTestState('idle'); setWordIndex(0); setCharIndex(0); setInputBuffer(''); setWordResults([]); setCorrectChars(0); setIncorrectChars(0); setWpmHistory([]); setLineOffset(0); correctRef.current = 0; incorrectRef.current = 0; totalKeysRef.current = 0; setElapsed(0); setTimeLeft(mode === 'time' ? timeValue : 0); setTimeout(() => inputRef.current?.focus(), 50); }}
+                      className="font-mono text-xs px-4 py-2 rounded border border-muted text-muted-foreground hover:text-primary hover:border-primary/40 transition-colors">
+                      [_RETRY]
+                    </button>
+                    <span className="font-mono text-[10px] text-muted-foreground/30">[Tab] restart</span>
+                  </div>
+
+                  {/* Save score */}
+                  <div className="flex items-center gap-2 pt-2">
+                    <span className="font-mono text-[10px] text-muted-foreground/50">save score:</span>
+                    <input
+                      value={playerName}
+                      onChange={e => setPlayerName(e.target.value)}
+                      placeholder="your name"
+                      className="font-mono text-xs px-3 py-1.5 bg-muted/20 border border-primary/15 rounded text-foreground placeholder:text-muted-foreground/30 focus:outline-none focus:border-primary/50 w-40"
+                      onKeyDown={e => { if (e.key === 'Enter') saveScore(); e.stopPropagation(); }}
+                    />
+                    <button
+                      onClick={saveScore}
+                      disabled={saving || !playerName.trim()}
+                      className="font-mono text-[10px] px-3 py-1.5 rounded border border-primary/30 text-primary hover:bg-primary/10 transition-colors disabled:opacity-30"
+                    >
+                      {saving ? '...' : '[_SAVE]'}
+                    </button>
+                  </div>
+                </div>
+              )}
             </motion.div>
           )}
         </AnimatePresence>
 
-        <p className="font-mono text-[10px] text-muted-foreground/50 text-center">
-          // Tab = restart · Backspace = correct · Paste disabled
-        </p>
+        {/* Bottom hints */}
+        <div className="py-4 text-center font-mono text-[10px] text-muted-foreground/20">
+          [Tab] restart &nbsp; [Esc] stop &nbsp; [Ctrl+⌫] delete word
+        </div>
       </div>
-    </ToolLayout>
+
+      {/* Shake keyframe - injected via style tag */}
+      <style>{`
+        @keyframes shake {
+          0%, 100% { transform: translateX(0); }
+          25% { transform: translateX(-4px); }
+          75% { transform: translateX(4px); }
+        }
+        .animate-\\[shake_0\\.3s_ease-in-out\\] {
+          animation: shake 0.3s ease-in-out;
+        }
+      `}</style>
+    </div>
   );
 };
 
