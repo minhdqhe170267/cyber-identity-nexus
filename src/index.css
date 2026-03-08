@@ -248,6 +248,28 @@
   .blink-dot {
     animation: blink-dot 1.5s ease-in-out infinite;
   }
+
+  @keyframes confetti-fall {
+    0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+    100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+  }
+
+  @keyframes page-glitch-anim {
+    0%, 100% { transform: translate(0); filter: none; }
+    10% { transform: translate(-3px, 2px); filter: hue-rotate(90deg); }
+    20% { transform: translate(3px, -2px); filter: hue-rotate(180deg); }
+    30% { transform: translate(-2px, -1px); filter: hue-rotate(270deg); }
+    40% { transform: translate(2px, 1px); filter: hue-rotate(360deg); }
+    50% { transform: translate(-1px, 2px); filter: saturate(3); }
+    60% { transform: translate(1px, -2px); filter: brightness(1.5); }
+    70% { transform: translate(-3px, 1px); filter: contrast(1.5); }
+    80% { transform: translate(3px, -1px); filter: hue-rotate(90deg); }
+    90% { transform: translate(-1px, -2px); filter: none; }
+  }
+
+  .page-glitch * {
+    animation: page-glitch-anim 0.3s infinite !important;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
