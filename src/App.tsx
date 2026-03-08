@@ -75,6 +75,8 @@ const App = () => (
               <Route path="/tools/color" element={<ColorTools />} />
               <Route path="/tools/markdown" element={<MarkdownEditor />} />
               <Route path="/tools/cron" element={<CronExplainer />} />
+              <Route path="/tools/keyboard" element={<KeyboardTester />} />
+              <Route path="/tools/mouse" element={<MouseTester />} />
               <Route path="/paste/:id" element={<PasteView />} />
               <Route path="/s/:code" element={<ShortRedirect />} />
               <Route path="/admin" element={<AdminLogin />} />
