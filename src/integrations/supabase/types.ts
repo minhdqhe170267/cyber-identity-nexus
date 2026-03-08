@@ -38,6 +38,33 @@ export type Database = {
         }
         Relationships: []
       }
+      game_scores_2048: {
+        Row: {
+          created_at: string | null
+          id: string
+          max_tile: number
+          moves: number
+          player_name: string
+          score: number
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          max_tile: number
+          moves: number
+          player_name: string
+          score: number
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          max_tile?: number
+          moves?: number
+          player_name?: string
+          score?: number
+        }
+        Relationships: []
+      }
       guestbook: {
         Row: {
           approved: boolean | null
