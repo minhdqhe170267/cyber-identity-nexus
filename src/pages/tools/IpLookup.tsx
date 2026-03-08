@@ -20,12 +20,25 @@ const IpLookup = () => {
     setLoading(true);
     setError('');
     try {
-      const url = ip ? `https://ipapi.co/${ip}/json/` : 'https://ipapi.co/json/';
+      // Try ip-api.com first (generous free tier: 45 req/min)
+      const query = ip || '';
+      const url = `http://ip-api.com/json/${query}?fields=status,message,query,city,regionName,country,countryCode,isp,lat,lon,timezone,as`;
       const res = await fetch(url);
       if (!res.ok) throw new Error('Lookup failed');
       const json = await res.json();
-      if (json.error) throw new Error(json.reason || 'Invalid IP');
-      setData(json);
+      if (json.status === 'fail') throw new Error(json.message || 'Invalid IP');
+      setData({
+        ip: json.query,
+        city: json.city,
+        region: json.regionName,
+        country_name: json.country,
+        country_code: json.countryCode,
+        org: json.isp,
+        latitude: json.lat,
+        longitude: json.lon,
+        timezone: json.timezone,
+        asn: json.as,
+      });
     } catch (e: any) {
       setError(e.message || 'Unknown error');
       setData(null);
