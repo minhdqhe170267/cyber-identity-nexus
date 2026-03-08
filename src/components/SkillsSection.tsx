@@ -40,6 +40,26 @@ const barColor = (level: number) =>
   level >= 70 ? 'bg-secondary neon-glow-blue' :
   'bg-accent neon-glow-pink';
 
+const panelContainerVariants = {
+  hidden: {},
+  visible: { transition: { staggerChildren: 0.15 } },
+};
+
+const panelVariants = {
+  hidden: { opacity: 0, y: 30 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.4 } },
+};
+
+const skillContainerVariants = {
+  hidden: {},
+  visible: { transition: { staggerChildren: 0.08, delayChildren: 0.2 } },
+};
+
+const skillVariants = {
+  hidden: { opacity: 0, x: -10 },
+  visible: { opacity: 1, x: 0, transition: { duration: 0.3 } },
+};
+
 const SkillsSection = () => {
   return (
     <section id="skills" className="relative py-24 px-6">
@@ -54,22 +74,31 @@ const SkillsSection = () => {
           <p className="section-subtitle">{"// Installed packages & proficiency"}</p>
         </motion.div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {PANELS.map((panel, pi) => (
+        <motion.div
+          variants={panelContainerVariants}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, margin: '-50px' }}
+          className="grid grid-cols-1 md:grid-cols-3 gap-6"
+        >
+          {PANELS.map((panel) => (
             <motion.div
               key={panel.title}
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.4, delay: pi * 0.15 }}
+              variants={panelVariants}
               className="glass-card rounded-lg p-6"
             >
               <h3 className="font-display text-sm text-primary mb-6 tracking-wider">
                 [{panel.title}]
               </h3>
-              <div className="space-y-4">
-                {panel.skills.map((skill, si) => (
-                  <div key={skill.name}>
+              <motion.div
+                variants={skillContainerVariants}
+                initial="hidden"
+                whileInView="visible"
+                viewport={{ once: true }}
+                className="space-y-4"
+              >
+                {panel.skills.map((skill) => (
+                  <motion.div key={skill.name} variants={skillVariants}>
                     <div className="flex justify-between font-mono text-xs mb-1">
                       <span className="text-foreground">{skill.name}</span>
                       <span className="text-muted-foreground">{skill.level}%</span>
@@ -79,16 +108,16 @@ const SkillsSection = () => {
                         initial={{ width: 0 }}
                         whileInView={{ width: `${skill.level}%` }}
                         viewport={{ once: true }}
-                        transition={{ duration: 0.8, delay: pi * 0.15 + si * 0.08, ease: 'easeOut' }}
+                        transition={{ duration: 0.8, ease: 'easeOut' }}
                         className={`h-full rounded-full ${barColor(skill.level)}`}
                       />
                     </div>
-                  </div>
+                  </motion.div>
                 ))}
-              </div>
+              </motion.div>
             </motion.div>
           ))}
-        </div>
+        </motion.div>
       </div>
     </section>
   );
