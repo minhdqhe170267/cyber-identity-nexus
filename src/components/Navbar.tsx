@@ -11,6 +11,7 @@ const NAV_ITEMS = [
   { label: 'BLOG', action: '/blog' },
   { label: 'GUESTBOOK', action: '/guestbook' },
   { label: 'CONTACT', action: 'contact' },
+  { label: 'TEMP MAIL', action: '/tools/tempmail' },
 ];
 
 const Navbar = () => {

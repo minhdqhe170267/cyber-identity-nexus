@@ -19,6 +19,7 @@ const AdminProjects = lazy(() => import("./pages/AdminProjects"));
 const AdminBlog = lazy(() => import("./pages/AdminBlog"));
 const AdminBlogEditor = lazy(() => import("./pages/AdminBlogEditor"));
 const AdminGuestbook = lazy(() => import("./pages/AdminGuestbook"));
+const TempMail = lazy(() => import("./pages/TempMail"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient();
