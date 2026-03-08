@@ -41,6 +41,8 @@ const MarkdownEditor = lazy(() => import("./pages/tools/MarkdownEditor"));
 const CronExplainer = lazy(() => import("./pages/tools/CronExplainer"));
 const KeyboardTester = lazy(() => import("./pages/tools/KeyboardTester"));
 const MouseTester = lazy(() => import("./pages/tools/MouseTester"));
+const TypingSpeedTest = lazy(() => import("./pages/tools/TypingSpeedTest"));
+const TypingLeaderboard = lazy(() => import("./pages/tools/TypingLeaderboard"));
 const ShortRedirect = lazy(() => import("./pages/tools/ShortRedirect"));
 
 const queryClient = new QueryClient();
