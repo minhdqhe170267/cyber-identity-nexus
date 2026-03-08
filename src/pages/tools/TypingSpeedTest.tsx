@@ -204,7 +204,7 @@ const TypingSpeedTest = () => {
       }
       setWordIndex(prev => prev + 1); setCharIndex(0); setInputBuffer(''); setConsecutiveErrors(0);
       if ((mode === 'words' || mode === 'quote') && wordIndex + 1 >= words.length) endTest();
-      if (mode === 'zen' && wordIndex + 1 >= words.length - 20) setWords(prev => [...prev, ...generateWords(100, top200english, punctuation, numbers)]);
+      if (mode === 'zen' && wordIndex + 1 >= words.length - 20) { const pool = language === 'vietnamese' ? top200vietnamese : top200english; setWords(prev => [...prev, ...generateWords(100, pool, punctuation, numbers)]); }
       return;
     }
 
