@@ -203,6 +203,36 @@ export type Database = {
         }
         Relationships: []
       }
+      typing_scores: {
+        Row: {
+          accuracy: number
+          created_at: string | null
+          duration: number
+          id: string
+          mode: string
+          player_name: string
+          wpm: number
+        }
+        Insert: {
+          accuracy: number
+          created_at?: string | null
+          duration: number
+          id?: string
+          mode: string
+          player_name: string
+          wpm: number
+        }
+        Update: {
+          accuracy?: number
+          created_at?: string | null
+          duration?: number
+          id?: string
+          mode?: string
+          player_name?: string
+          wpm?: number
+        }
+        Relationships: []
+      }
       url_shortener: {
         Row: {
           clicks: number | null
