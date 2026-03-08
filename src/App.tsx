@@ -89,6 +89,13 @@ const App = () => (
               <Route path="/tools/typing-speed" element={<TypingSpeedTest />} />
               <Route path="/tools/typing-speed/leaderboard" element={<TypingLeaderboard />} />
               <Route path="/paste/:id" element={<PasteView />} />
+              <Route path="/tools/image-converter" element={<ImageConverter />} />
+              <Route path="/tools/favicon" element={<FaviconGenerator />} />
+              <Route path="/tools/diff" element={<DiffChecker />} />
+              <Route path="/tools/text-case" element={<TextCaseConverter />} />
+              <Route path="/tools/calculator" element={<CalculatorPage />} />
+              <Route path="/tools/base-converter" element={<BaseConverter />} />
+              <Route path="/tools/2048" element={<Game2048 />} />
               <Route path="/s/:code" element={<ShortRedirect />} />
               <Route path="/admin" element={<AdminLogin />} />
               <Route path="/admin/dashboard" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />

@@ -45,7 +45,7 @@ const TOOLS: ToolDef[] = [
   { name: '2048', desc: 'Merge tiles to reach 2048 — cyberpunk edition', path: '/tools/2048', icon: Gamepad2, category: 'GAMES' },
 ];
 
-const CATEGORIES = ['ALL', 'CONVERTERS', 'GENERATORS', 'LOOKUP', 'PRODUCTIVITY', 'HARDWARE'] as const;
+const CATEGORIES = ['ALL', 'CONVERTERS', 'GENERATORS', 'LOOKUP', 'PRODUCTIVITY', 'HARDWARE', 'IMAGE & MEDIA', 'TEXT & WRITING', 'MATH', 'GAMES'] as const;
 
 const Tools = () => {
   const [search, setSearch] = useState('');
