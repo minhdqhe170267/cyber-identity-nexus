@@ -39,6 +39,8 @@ const HashGenerator = lazy(() => import("./pages/tools/HashGenerator"));
 const ColorTools = lazy(() => import("./pages/tools/ColorTools"));
 const MarkdownEditor = lazy(() => import("./pages/tools/MarkdownEditor"));
 const CronExplainer = lazy(() => import("./pages/tools/CronExplainer"));
+const KeyboardTester = lazy(() => import("./pages/tools/KeyboardTester"));
+const MouseTester = lazy(() => import("./pages/tools/MouseTester"));
 const ShortRedirect = lazy(() => import("./pages/tools/ShortRedirect"));
 
 const queryClient = new QueryClient();
@@ -73,6 +75,8 @@ const App = () => (
               <Route path="/tools/color" element={<ColorTools />} />
               <Route path="/tools/markdown" element={<MarkdownEditor />} />
               <Route path="/tools/cron" element={<CronExplainer />} />
+              <Route path="/tools/keyboard" element={<KeyboardTester />} />
+              <Route path="/tools/mouse" element={<MouseTester />} />
               <Route path="/paste/:id" element={<PasteView />} />
               <Route path="/s/:code" element={<ShortRedirect />} />
               <Route path="/admin" element={<AdminLogin />} />

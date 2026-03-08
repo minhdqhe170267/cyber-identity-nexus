@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import {
   Braces, KeyRound, Fingerprint, Binary, QrCode, Globe, ShieldCheck,
   Regex, Link2, FileCode2, Hash, Palette, FileText, Clock, Mail, Search,
+  Keyboard, Mouse,
 } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 
@@ -12,7 +13,7 @@ type ToolDef = {
   desc: string;
   path: string;
   icon: React.ElementType;
-  category: 'CONVERTERS' | 'GENERATORS' | 'LOOKUP' | 'PRODUCTIVITY';
+  category: 'CONVERTERS' | 'GENERATORS' | 'LOOKUP' | 'PRODUCTIVITY' | 'HARDWARE';
 };
 
 const TOOLS: ToolDef[] = [
@@ -31,9 +32,11 @@ const TOOLS: ToolDef[] = [
   { name: 'Markdown Editor', desc: 'Write & preview Markdown in real-time', path: '/tools/markdown', icon: FileText, category: 'PRODUCTIVITY' },
   { name: 'Cron Explainer', desc: 'Parse & build cron expressions visually', path: '/tools/cron', icon: Clock, category: 'PRODUCTIVITY' },
   { name: 'Temp Mail', desc: 'Disposable inbox — auto-expires on refresh', path: '/tools/tempmail', icon: Mail, category: 'PRODUCTIVITY' },
+  { name: 'Keyboard Tester', desc: 'Test every key on your keyboard visually', path: '/tools/keyboard', icon: Keyboard, category: 'HARDWARE' },
+  { name: 'Mouse Tester', desc: 'Test clicks, movement & scroll of your mouse', path: '/tools/mouse', icon: Mouse, category: 'HARDWARE' },
 ];
 
-const CATEGORIES = ['ALL', 'CONVERTERS', 'GENERATORS', 'LOOKUP', 'PRODUCTIVITY'] as const;
+const CATEGORIES = ['ALL', 'CONVERTERS', 'GENERATORS', 'LOOKUP', 'PRODUCTIVITY', 'HARDWARE'] as const;
 
 const Tools = () => {
   const [search, setSearch] = useState('');
