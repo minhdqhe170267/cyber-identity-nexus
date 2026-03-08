@@ -114,11 +114,13 @@ const TypingSpeedTest = () => {
 
   // Generate test
   const generateTest = useCallback(() => {
+    const pool = language === 'vietnamese' ? top200vietnamese : top200english;
+    const poolLarge = language === 'vietnamese' ? top500vietnamese : top1000english;
     let w: string[];
     if (mode === 'quote') { const q = getQuote(quoteValue); setCurrentQuote(q); w = q.text.split(/\s+/); }
-    else if (mode === 'words') w = generateWords(wordValue, top200english, punctuation, numbers);
-    else if (mode === 'zen') w = generateWords(200, top200english, punctuation, numbers);
-    else w = generateWords(300, top200english, punctuation, numbers);
+    else if (mode === 'words') w = generateWords(wordValue, pool, punctuation, numbers);
+    else if (mode === 'zen') w = generateWords(200, pool, punctuation, numbers);
+    else w = generateWords(300, pool, punctuation, numbers);
     setWords(w); setWordIndex(0); setCharIndex(0); setInputBuffer(''); setWordResults([]);
     setTimeLeft(mode === 'time' ? timeValue : 0); setElapsed(0); setCorrectChars(0); setIncorrectChars(0);
     setWpmHistory([]); setErrorTimeline([]); setLiveWpm(0); setLiveRaw(0); setLiveAcc(100);
@@ -127,7 +129,7 @@ const TypingSpeedTest = () => {
     if (timerRef.current) clearInterval(timerRef.current);
     if (statsRef.current) clearInterval(statsRef.current);
     setTimeout(() => inputRef.current?.focus(), 50);
-  }, [mode, timeValue, wordValue, quoteValue, punctuation, numbers]);
+  }, [mode, timeValue, wordValue, quoteValue, punctuation, numbers, language]);
 
   useEffect(() => { generateTest(); }, [generateTest]);
 
