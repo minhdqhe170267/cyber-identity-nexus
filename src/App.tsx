@@ -79,6 +79,8 @@ const App = () => (
               <Route path="/tools/cron" element={<CronExplainer />} />
               <Route path="/tools/keyboard" element={<KeyboardTester />} />
               <Route path="/tools/mouse" element={<MouseTester />} />
+              <Route path="/tools/typing-speed" element={<TypingSpeedTest />} />
+              <Route path="/tools/typing-speed/leaderboard" element={<TypingLeaderboard />} />
               <Route path="/paste/:id" element={<PasteView />} />
               <Route path="/s/:code" element={<ShortRedirect />} />
               <Route path="/admin" element={<AdminLogin />} />
