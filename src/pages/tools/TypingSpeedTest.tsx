@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Tooltip, Area, AreaChart, ScatterChart, Scatter } from 'recharts';
-import { Trophy, Volume2, VolumeX, RotateCcw, Flame, Zap, Target, Clock, Hash, Type, BookOpen, Infinity, ArrowLeft, ChevronRight } from 'lucide-react';
+import { Trophy, Volume2, VolumeX, RotateCcw, Flame, Zap, Target, Clock, Hash, Type, BookOpen, Infinity, ArrowLeft, ChevronRight, Globe } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { top200english, top1000english, top200vietnamese, top500vietnamese, quotes, type Quote } from '@/data/typingWordPools';
