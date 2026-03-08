@@ -10,6 +10,7 @@ const LINKS = [
   { label: 'STATS', action: 'stats' },
   { label: 'CONTACT', action: 'contact' },
   { label: 'BLOG', action: '/blog' },
+  { label: 'TOOLS', action: '/tools' },
   { label: 'GUESTBOOK', action: '/guestbook' },
 ];
 

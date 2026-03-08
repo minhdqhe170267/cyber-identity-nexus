@@ -9,9 +9,9 @@ const NAV_ITEMS = [
   { label: 'PROJECTS', action: 'projects' },
   { label: 'SKILLS', action: 'skills' },
   { label: 'BLOG', action: '/blog' },
+  { label: 'TOOLS', action: '/tools' },
   { label: 'GUESTBOOK', action: '/guestbook' },
   { label: 'CONTACT', action: 'contact' },
-  { label: 'TEMP MAIL', action: '/tools/tempmail' },
 ];
 
 const Navbar = () => {
