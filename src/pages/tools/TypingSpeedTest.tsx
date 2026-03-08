@@ -11,6 +11,8 @@ import { top200english, top1000english, top200vietnamese, top500vietnamese, quot
 type TestMode = 'time' | 'words' | 'quote' | 'zen';
 type TestState = 'idle' | 'running' | 'finished';
 type QuoteLength = 'short' | 'medium' | 'long' | 'epic';
+type Language = 'english' | 'vietnamese';
+type QuoteLength = 'short' | 'medium' | 'long' | 'epic';
 
 const TIME_VALUES = [15, 30, 60, 120];
 const WORD_VALUES = [10, 25, 50, 100];
