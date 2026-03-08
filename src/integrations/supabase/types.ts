@@ -206,29 +206,47 @@ export type Database = {
       typing_scores: {
         Row: {
           accuracy: number
+          consistency: number
+          correct_chars: number
           created_at: string | null
-          duration: number
+          duration_seconds: number | null
           id: string
+          incorrect_chars: number
           mode: string
+          mode_value: string
           player_name: string
+          raw_wpm: number
+          word_count: number | null
           wpm: number
         }
         Insert: {
           accuracy: number
+          consistency: number
+          correct_chars: number
           created_at?: string | null
-          duration: number
+          duration_seconds?: number | null
           id?: string
+          incorrect_chars: number
           mode: string
+          mode_value: string
           player_name: string
+          raw_wpm: number
+          word_count?: number | null
           wpm: number
         }
         Update: {
           accuracy?: number
+          consistency?: number
+          correct_chars?: number
           created_at?: string | null
-          duration?: number
+          duration_seconds?: number | null
           id?: string
+          incorrect_chars?: number
           mode?: string
+          mode_value?: string
           player_name?: string
+          raw_wpm?: number
+          word_count?: number | null
           wpm?: number
         }
         Relationships: []
