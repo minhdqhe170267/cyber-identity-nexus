@@ -108,3 +108,41 @@ export const quotes: Quote[] = [
   { text: "No one in the brief history of computing has ever written a piece of perfect software. It is unlikely that you will be the first.", source: "Andy Hunt", length: 'long' },
   { text: "Walking on water and developing software from a specification are easy if both are frozen.", source: "Edward V. Berard", length: 'medium' },
 ];
+
+// === VIETNAMESE WORDS (with diacritics) ===
+export const top200vietnamese = [
+  'và','của','là','có','trong','được','cho','không','một','những','các','này','với','người','từ',
+  'đã','đến','như','theo','về','nhiều','tại','khi','cũng','rất','hơn','trên','hay','nhưng','còn',
+  'bị','phải','nếu','sẽ','để','đó','mà','vì','ở','nên','thì','lại','sau','đây','làm',
+  'năm','chỉ','hoặc','qua','đi','ra','nào','đều','vào','hai','mới','bao','trước','giữa','lên',
+  'nước','việc','đang','lớn','nhất','số','cần','thêm','giờ','ngày','tôi','anh','chị','bạn','em',
+  'mình','họ','ông','bà','con','nhà','trẻ','già','đẹp','xấu','tốt','xong','biết','hiểu','yêu',
+  'ghét','vui','buồn','sợ','chơi','ăn','uống','ngủ','dậy','chạy','đứng','ngồi','nói','viết','đọc',
+  'học','dạy','làm','mua','bán','giúp','hỏi','trả','lời','mắt','tay','chân','đầu','miệng','tai',
+  'tim','óc','máu','xương','da','tóc','đường','phố','sông','núi','biển','trời','đất','mây','gió',
+  'mưa','nắng','lạnh','nóng','ấm','mát','sáng','tối','trưa','chiều','sớm','muộn','nhanh','chậm',
+  'xa','gần','cao','thấp','dài','ngắn','rộng','hẹp','nặng','nhẹ','cứng','mềm','sạch','bẩn',
+  'mạnh','yếu','giàu','nghèo','đúng','sai','thật','giả','mới','cũ','trắng','đen','đỏ','vàng',
+  'xanh','tím','hồng','nâu','bạc','vàng','thích','muốn','cần','phải','nên','được','bắt','đầu',
+];
+
+export const top500vietnamese = [
+  ...top200vietnamese,
+  'thành','phố','công','nghệ','thông','tin','kinh','tế','chính','trị','giáo','dục','văn','hóa',
+  'xã','hội','khoa','học','lịch','sử','nghệ','thuật','âm','nhạc','phim','ảnh','sách','báo',
+  'trường','bệnh','viện','chợ','siêu','thị','ngân','hàng','công','viên','sân','bay','ga','tàu',
+  'xe','buýt','máy','tính','điện','thoại','internet','phần','mềm','ứng','dụng','trang','web',
+  'dữ','liệu','mạng','lưới','bảo','mật','hệ','thống','chương','trình','thuật','toán','mã','nguồn',
+  'giao','diện','người','dùng','tính','năng','cập','nhật','phiên','bản','lỗi','sửa','chữa',
+  'thử','nghiệm','triển','khai','quản','lý','dự','án','nhóm','đội','họp','trình','bày',
+  'nghiên','cứu','phát','triển','sản','xuất','tiêu','thụ','thương','mại','đầu','tư','tài','chính',
+  'ngân','sách','thuế','lãi','suất','cổ','phiếu','chứng','khoán','bảo','hiểm','hợp','đồng',
+  'quyền','lợi','trách','nhiệm','luật','pháp','quy','định','chế','độ','chính','sách','biện','pháp',
+  'chiến','lược','mục','tiêu','kế','hoạch','giải','pháp','vấn','đề','thách','thức','cơ','hội',
+  'thành','công','thất','bại','kinh','nghiệm','kỹ','năng','kiến','thức','sáng','tạo','đổi','mới',
+  'phát','minh','khám','phá','nghiên','cứu','thí','nghiệm','quan','sát','phân','tích','đánh','giá',
+  'kết','luận','báo','cáo','tài','liệu','hồ','sơ','đăng','ký','xác','nhận','phê','duyệt',
+  'thực','hiện','hoàn','thành','bắt','đầu','kết','thúc','tiếp','tục','dừng','lại','thay','đổi',
+  'cải','tiến','nâng','cao','giảm','thiểu','tăng','cường','mở','rộng','thu','hẹp','kết','nối',
+  'chia','sẻ','trao','đổi','hợp','tác','cạnh','tranh','phối','hợp','hỗ','trợ','đào','tạo',
+];

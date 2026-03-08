@@ -2,15 +2,16 @@ import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Tooltip, Area, AreaChart, ScatterChart, Scatter } from 'recharts';
-import { Trophy, Volume2, VolumeX, RotateCcw, Flame, Zap, Target, Clock, Hash, Type, BookOpen, Infinity, ArrowLeft, ChevronRight } from 'lucide-react';
+import { Trophy, Volume2, VolumeX, RotateCcw, Flame, Zap, Target, Clock, Hash, Type, BookOpen, Infinity, ArrowLeft, ChevronRight, Globe } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
-import { top200english, top1000english, quotes, type Quote } from '@/data/typingWordPools';
+import { top200english, top1000english, top200vietnamese, top500vietnamese, quotes, type Quote } from '@/data/typingWordPools';
 
 // ─── Types ───
 type TestMode = 'time' | 'words' | 'quote' | 'zen';
 type TestState = 'idle' | 'running' | 'finished';
 type QuoteLength = 'short' | 'medium' | 'long' | 'epic';
+type Language = 'english' | 'vietnamese';
 
 const TIME_VALUES = [15, 30, 60, 120];
 const WORD_VALUES = [10, 25, 50, 100];
@@ -68,6 +69,7 @@ const TypingSpeedTest = () => {
   const [quoteValue, setQuoteValue] = useState<QuoteLength>('medium');
   const [punctuation, setPunctuation] = useState(false);
   const [numbers, setNumbers] = useState(false);
+  const [language, setLanguage] = useState<Language>('english');
   const [soundOn, setSoundOn] = useState(false);
 
   const [testState, setTestState] = useState<TestState>('idle');
@@ -111,11 +113,13 @@ const TypingSpeedTest = () => {
 
   // Generate test
   const generateTest = useCallback(() => {
+    const pool = language === 'vietnamese' ? top200vietnamese : top200english;
+    const poolLarge = language === 'vietnamese' ? top500vietnamese : top1000english;
     let w: string[];
     if (mode === 'quote') { const q = getQuote(quoteValue); setCurrentQuote(q); w = q.text.split(/\s+/); }
-    else if (mode === 'words') w = generateWords(wordValue, top200english, punctuation, numbers);
-    else if (mode === 'zen') w = generateWords(200, top200english, punctuation, numbers);
-    else w = generateWords(300, top200english, punctuation, numbers);
+    else if (mode === 'words') w = generateWords(wordValue, pool, punctuation, numbers);
+    else if (mode === 'zen') w = generateWords(200, pool, punctuation, numbers);
+    else w = generateWords(300, pool, punctuation, numbers);
     setWords(w); setWordIndex(0); setCharIndex(0); setInputBuffer(''); setWordResults([]);
     setTimeLeft(mode === 'time' ? timeValue : 0); setElapsed(0); setCorrectChars(0); setIncorrectChars(0);
     setWpmHistory([]); setErrorTimeline([]); setLiveWpm(0); setLiveRaw(0); setLiveAcc(100);
@@ -124,7 +128,7 @@ const TypingSpeedTest = () => {
     if (timerRef.current) clearInterval(timerRef.current);
     if (statsRef.current) clearInterval(statsRef.current);
     setTimeout(() => inputRef.current?.focus(), 50);
-  }, [mode, timeValue, wordValue, quoteValue, punctuation, numbers]);
+  }, [mode, timeValue, wordValue, quoteValue, punctuation, numbers, language]);
 
   useEffect(() => { generateTest(); }, [generateTest]);
 
@@ -200,7 +204,7 @@ const TypingSpeedTest = () => {
       }
       setWordIndex(prev => prev + 1); setCharIndex(0); setInputBuffer(''); setConsecutiveErrors(0);
       if ((mode === 'words' || mode === 'quote') && wordIndex + 1 >= words.length) endTest();
-      if (mode === 'zen' && wordIndex + 1 >= words.length - 20) setWords(prev => [...prev, ...generateWords(100, top200english, punctuation, numbers)]);
+      if (mode === 'zen' && wordIndex + 1 >= words.length - 20) { const pool = language === 'vietnamese' ? top200vietnamese : top200english; setWords(prev => [...prev, ...generateWords(100, pool, punctuation, numbers)]); }
       return;
     }
 
@@ -334,6 +338,18 @@ const TypingSpeedTest = () => {
               </button>
             ))}
             {mode === 'zen' && <span className="font-mono text-[11px] text-muted-foreground/30 px-2">∞ infinite</span>}
+          </div>
+
+          <div className="w-px h-5 bg-muted/20 mx-2" />
+
+          <div className="flex items-center gap-0.5">
+            <Globe size={12} className="text-muted-foreground/30 mr-1" />
+            {(['english', 'vietnamese'] as Language[]).map(l => (
+              <button key={l} onClick={() => setLanguage(l)}
+                className={`font-mono text-[11px] px-2.5 py-1.5 rounded-lg transition-all ${language === l ? 'text-primary bg-primary/10' : 'text-muted-foreground/30 hover:text-muted-foreground/60'}`}>
+                {l === 'english' ? 'EN' : 'VI'}
+              </button>
+            ))}
           </div>
         </div>
 
