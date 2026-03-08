@@ -1,9 +1,23 @@
 import { useEffect, useState } from 'react';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { Menu } from 'lucide-react';
+import MobileMenu from './MobileMenu';
 
-const NAV_ITEMS = ['HOME', 'ABOUT', 'PROJECTS', 'SKILLS', 'CONTACT'];
+const NAV_ITEMS = [
+  { label: 'HOME', action: 'home' },
+  { label: 'ABOUT', action: 'about' },
+  { label: 'PROJECTS', action: 'projects' },
+  { label: 'SKILLS', action: 'skills' },
+  { label: 'BLOG', action: '/blog' },
+  { label: 'GUESTBOOK', action: '/guestbook' },
+  { label: 'CONTACT', action: 'contact' },
+];
 
 const Navbar = () => {
   const [scrollProgress, setScrollProgress] = useState(0);
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
     const onScroll = () => {
@@ -14,9 +28,17 @@ const Navbar = () => {
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
-  const scrollTo = (id: string) => {
-    const el = document.getElementById(id.toLowerCase());
-    el?.scrollIntoView({ behavior: 'smooth' });
+  const handleClick = (action: string) => {
+    if (action.startsWith('/')) {
+      navigate(action);
+    } else {
+      if (location.pathname !== '/') {
+        navigate('/');
+        setTimeout(() => document.getElementById(action)?.scrollIntoView({ behavior: 'smooth' }), 300);
+      } else {
+        document.getElementById(action)?.scrollIntoView({ behavior: 'smooth' });
+      }
+    }
   };
 
   return (
@@ -27,22 +49,29 @@ const Navbar = () => {
       />
       <nav className="fixed top-[3px] left-0 right-0 z-50 glass-card border-b border-primary/15 px-6 py-3">
         <div className="max-w-6xl mx-auto flex items-center justify-between">
-          <span className="font-display text-sm text-primary neon-text-green tracking-wider">
+          <Link to="/" className="font-display text-sm text-primary neon-text-green tracking-wider">
             DIOS://
-          </span>
-          <div className="hidden md:flex gap-6">
+          </Link>
+          <div className="hidden md:flex items-center gap-6">
             {NAV_ITEMS.map((item) => (
               <button
-                key={item}
-                onClick={() => scrollTo(item)}
+                key={item.label}
+                onClick={() => handleClick(item.action)}
                 className="font-mono text-xs tracking-widest text-foreground hover:text-primary transition-colors duration-200"
               >
-                {item}
+                {item.label}
               </button>
             ))}
           </div>
+          <button
+            onClick={() => setMobileOpen(true)}
+            className="md:hidden text-foreground hover:text-primary transition-colors"
+          >
+            <Menu size={20} />
+          </button>
         </div>
       </nav>
+      <MobileMenu open={mobileOpen} onClose={() => setMobileOpen(false)} />
     </>
   );
 };
