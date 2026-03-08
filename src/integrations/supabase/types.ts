@@ -38,6 +38,138 @@ export type Database = {
         }
         Relationships: []
       }
+      guestbook: {
+        Row: {
+          approved: boolean | null
+          created_at: string | null
+          id: string
+          message: string
+          name: string
+        }
+        Insert: {
+          approved?: boolean | null
+          created_at?: string | null
+          id?: string
+          message: string
+          name: string
+        }
+        Update: {
+          approved?: boolean | null
+          created_at?: string | null
+          id?: string
+          message?: string
+          name?: string
+        }
+        Relationships: []
+      }
+      leaderboard: {
+        Row: {
+          created_at: string | null
+          id: string
+          player_name: string
+          score: number
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          player_name: string
+          score: number
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          player_name?: string
+          score?: number
+        }
+        Relationships: []
+      }
+      page_views: {
+        Row: {
+          created_at: string | null
+          id: string
+          page: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          page?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          page?: string | null
+        }
+        Relationships: []
+      }
+      posts: {
+        Row: {
+          content: string | null
+          created_at: string | null
+          excerpt: string | null
+          id: string
+          published: boolean | null
+          slug: string
+          title: string
+        }
+        Insert: {
+          content?: string | null
+          created_at?: string | null
+          excerpt?: string | null
+          id?: string
+          published?: boolean | null
+          slug: string
+          title: string
+        }
+        Update: {
+          content?: string | null
+          created_at?: string | null
+          excerpt?: string | null
+          id?: string
+          published?: boolean | null
+          slug?: string
+          title?: string
+        }
+        Relationships: []
+      }
+      projects: {
+        Row: {
+          created_at: string | null
+          demo_url: string | null
+          description: string | null
+          featured: boolean | null
+          github_url: string | null
+          id: string
+          image_url: string | null
+          status: string | null
+          tech_tags: string[] | null
+          title: string
+        }
+        Insert: {
+          created_at?: string | null
+          demo_url?: string | null
+          description?: string | null
+          featured?: boolean | null
+          github_url?: string | null
+          id?: string
+          image_url?: string | null
+          status?: string | null
+          tech_tags?: string[] | null
+          title: string
+        }
+        Update: {
+          created_at?: string | null
+          demo_url?: string | null
+          description?: string | null
+          featured?: boolean | null
+          github_url?: string | null
+          id?: string
+          image_url?: string | null
+          status?: string | null
+          tech_tags?: string[] | null
+          title?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
