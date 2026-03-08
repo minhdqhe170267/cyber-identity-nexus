@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion } from 'framer-motion';
 import ToolLayout from '@/components/ToolLayout';
 import { Progress } from '@/components/ui/progress';
-import { copyToClipboard } from '@/lib/copy';
+
 
 // Key definitions for QWERTY layout
 type KeyDef = { code: string; label: string; width?: number };
