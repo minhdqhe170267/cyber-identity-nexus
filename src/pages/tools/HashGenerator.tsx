@@ -46,7 +46,7 @@ const sha1 = async (str: string): Promise<string> => {
 };
 
 const webCryptoHash = async (algo: string, data: Uint8Array): Promise<string> => {
-  const buf = await crypto.subtle.digest(algo, data);
+  const buf = await crypto.subtle.digest(algo, data.buffer as ArrayBuffer);
   return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
 };
 

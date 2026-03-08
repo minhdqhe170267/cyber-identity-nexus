@@ -57,6 +57,7 @@ const CommandPalette = ({ onPlayGame }: { onPlayGame: () => void }) => {
     { id: 'blog', label: 'Blog', icon: BookOpen, action: () => { setOpen(false); navigate('/blog'); } },
     { id: 'guestbook', label: 'Guestbook', icon: MessageSquare, action: () => { setOpen(false); navigate('/guestbook'); } },
     { id: 'contact', label: 'Contact', icon: Mail, action: () => scrollTo('contact') },
+    { id: 'tools', label: 'Tools Hub', icon: Terminal, action: () => { setOpen(false); navigate('/tools'); } },
     { id: 'tempmail', label: 'Temp Mail', icon: Mail, action: () => { setOpen(false); navigate('/tools/tempmail'); } },
     { id: 'play game', label: 'Play Snake Game', icon: Gamepad2, action: () => { setOpen(false); onPlayGame(); } },
     { id: 'sudo rm -rf /', label: 'sudo rm -rf /', icon: Terminal, action: () => setFunnyMsg('Permission denied. Nice try, hacker.') },
