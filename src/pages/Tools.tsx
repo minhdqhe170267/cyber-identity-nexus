@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import {
   Braces, KeyRound, Fingerprint, Binary, QrCode, Globe, ShieldCheck,
   Regex, Link2, FileCode2, Hash, Palette, FileText, Clock, Mail, Search,
+  Keyboard, Mouse,
 } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 
