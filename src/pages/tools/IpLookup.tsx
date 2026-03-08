@@ -20,24 +20,25 @@ const IpLookup = () => {
     setLoading(true);
     setError('');
     try {
-      // Try ip-api.com first (generous free tier: 45 req/min)
-      const query = ip || '';
-      const url = `http://ip-api.com/json/${query}?fields=status,message,query,city,regionName,country,countryCode,isp,lat,lon,timezone,as`;
+      // Use freeipapi.com (HTTPS, no key needed, generous limits)
+      const url = ip
+        ? `https://freeipapi.com/api/json/${ip}`
+        : 'https://freeipapi.com/api/json/';
       const res = await fetch(url);
       if (!res.ok) throw new Error('Lookup failed');
       const json = await res.json();
-      if (json.status === 'fail') throw new Error(json.message || 'Invalid IP');
+      if (json.error) throw new Error(json.message || 'Invalid IP');
       setData({
-        ip: json.query,
-        city: json.city,
+        ip: json.ipAddress,
+        city: json.cityName,
         region: json.regionName,
-        country_name: json.country,
+        country_name: json.countryName,
         country_code: json.countryCode,
-        org: json.isp,
-        latitude: json.lat,
-        longitude: json.lon,
-        timezone: json.timezone,
-        asn: json.as,
+        org: json.isp || 'N/A',
+        latitude: json.latitude,
+        longitude: json.longitude,
+        timezone: json.timeZone,
+        asn: json.asn || 'N/A',
       });
     } catch (e: any) {
       setError(e.message || 'Unknown error');
