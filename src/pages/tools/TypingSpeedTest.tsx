@@ -70,6 +70,7 @@ const TypingSpeedTest = () => {
   const [quoteValue, setQuoteValue] = useState<QuoteLength>('medium');
   const [punctuation, setPunctuation] = useState(false);
   const [numbers, setNumbers] = useState(false);
+  const [language, setLanguage] = useState<Language>('english');
   const [soundOn, setSoundOn] = useState(false);
 
   const [testState, setTestState] = useState<TestState>('idle');
