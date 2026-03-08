@@ -5,7 +5,7 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Tool
 import { Trophy, Volume2, VolumeX, RotateCcw, Flame, Zap, Target, Clock, Hash, Type, BookOpen, Infinity, ArrowLeft, ChevronRight } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
-import { top200english, top1000english, quotes, type Quote } from '@/data/typingWordPools';
+import { top200english, top1000english, top200vietnamese, top500vietnamese, quotes, type Quote } from '@/data/typingWordPools';
 
 // ─── Types ───
 type TestMode = 'time' | 'words' | 'quote' | 'zen';
