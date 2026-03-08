@@ -14,7 +14,7 @@ type ToolDef = {
   desc: string;
   path: string;
   icon: React.ElementType;
-  category: 'CONVERTERS' | 'GENERATORS' | 'LOOKUP' | 'PRODUCTIVITY' | 'HARDWARE';
+  category: 'CONVERTERS' | 'GENERATORS' | 'LOOKUP' | 'PRODUCTIVITY' | 'HARDWARE' | 'IMAGE & MEDIA' | 'TEXT & WRITING' | 'MATH' | 'GAMES';
 };
 
 const TOOLS: ToolDef[] = [
