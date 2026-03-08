@@ -101,6 +101,39 @@ export type Database = {
         }
         Relationships: []
       }
+      pastes: {
+        Row: {
+          content: string
+          created_at: string | null
+          expires_at: string | null
+          id: string
+          language: string | null
+          title: string | null
+          views: number | null
+          visibility: string | null
+        }
+        Insert: {
+          content: string
+          created_at?: string | null
+          expires_at?: string | null
+          id?: string
+          language?: string | null
+          title?: string | null
+          views?: number | null
+          visibility?: string | null
+        }
+        Update: {
+          content?: string
+          created_at?: string | null
+          expires_at?: string | null
+          id?: string
+          language?: string | null
+          title?: string | null
+          views?: number | null
+          visibility?: string | null
+        }
+        Relationships: []
+      }
       posts: {
         Row: {
           content: string | null
@@ -167,6 +200,30 @@ export type Database = {
           status?: string | null
           tech_tags?: string[] | null
           title?: string
+        }
+        Relationships: []
+      }
+      url_shortener: {
+        Row: {
+          clicks: number | null
+          created_at: string | null
+          id: string
+          original_url: string
+          short_code: string
+        }
+        Insert: {
+          clicks?: number | null
+          created_at?: string | null
+          id?: string
+          original_url: string
+          short_code: string
+        }
+        Update: {
+          clicks?: number | null
+          created_at?: string | null
+          id?: string
+          original_url?: string
+          short_code?: string
         }
         Relationships: []
       }
