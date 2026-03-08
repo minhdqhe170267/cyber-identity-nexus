@@ -19,6 +19,7 @@ const AdminProjects = lazy(() => import("./pages/AdminProjects"));
 const AdminBlog = lazy(() => import("./pages/AdminBlog"));
 const AdminBlogEditor = lazy(() => import("./pages/AdminBlogEditor"));
 const AdminGuestbook = lazy(() => import("./pages/AdminGuestbook"));
+const TempMail = lazy(() => import("./pages/TempMail"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient();
@@ -37,6 +38,7 @@ const App = () => (
               <Route path="/blog" element={<Blog />} />
               <Route path="/blog/:slug" element={<BlogPost />} />
               <Route path="/guestbook" element={<Guestbook />} />
+              <Route path="/tools/tempmail" element={<TempMail />} />
               <Route path="/admin" element={<AdminLogin />} />
               <Route path="/admin/dashboard" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
               <Route path="/admin/projects" element={<ProtectedRoute><AdminProjects /></ProtectedRoute>} />
