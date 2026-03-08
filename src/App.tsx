@@ -44,6 +44,13 @@ const MouseTester = lazy(() => import("./pages/tools/MouseTester"));
 const TypingSpeedTest = lazy(() => import("./pages/tools/TypingSpeedTest"));
 const TypingLeaderboard = lazy(() => import("./pages/tools/TypingLeaderboard"));
 const ShortRedirect = lazy(() => import("./pages/tools/ShortRedirect"));
+const ImageConverter = lazy(() => import("./pages/tools/ImageConverter"));
+const FaviconGenerator = lazy(() => import("./pages/tools/FaviconGenerator"));
+const DiffChecker = lazy(() => import("./pages/tools/DiffChecker"));
+const TextCaseConverter = lazy(() => import("./pages/tools/TextCaseConverter"));
+const CalculatorPage = lazy(() => import("./pages/tools/Calculator"));
+const BaseConverter = lazy(() => import("./pages/tools/BaseConverter"));
+const Game2048 = lazy(() => import("./pages/tools/Game2048"));
 
 const queryClient = new QueryClient();
 
