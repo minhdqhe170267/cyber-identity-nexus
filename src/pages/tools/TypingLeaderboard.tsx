@@ -1,119 +1,170 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import ToolLayout from '@/components/ToolLayout';
+import { Crown, ArrowLeft } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
-const MODES = ['ALL', 'WORDS', 'SENTENCES', 'CODE', 'NUMBERS'];
-const DURATIONS = ['ALL', '15', '30', '60', '120'];
+const MODES = ['ALL', 'time', 'words', 'quote'];
+const TIMEFRAMES = ['ALL TIME', 'THIS MONTH', 'THIS WEEK', 'TODAY'];
 
 const TypingLeaderboard = () => {
   const [data, setData] = useState<any[]>([]);
   const [modeFilter, setModeFilter] = useState('ALL');
-  const [durationFilter, setDurationFilter] = useState('ALL');
+  const [timeframe, setTimeframe] = useState('ALL TIME');
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(0);
+  const perPage = 25;
 
   useEffect(() => {
     (async () => {
       setLoading(true);
-      let query = supabase.from('typing_scores' as any).select('*').order('wpm', { ascending: false }).limit(50);
+      let query = supabase
+        .from('typing_scores' as any)
+        .select('*')
+        .order('wpm', { ascending: false })
+        .range(page * perPage, (page + 1) * perPage - 1);
+
       if (modeFilter !== 'ALL') query = query.eq('mode', modeFilter);
-      if (durationFilter !== 'ALL') query = query.eq('duration', parseInt(durationFilter));
+
+      if (timeframe !== 'ALL TIME') {
+        const now = new Date();
+        let from: Date;
+        if (timeframe === 'TODAY') {
+          from = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        } else if (timeframe === 'THIS WEEK') {
+          from = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+        } else {
+          from = new Date(now.getFullYear(), now.getMonth(), 1);
+        }
+        query = query.gte('created_at', from.toISOString());
+      }
+
       const { data: rows } = await query as any;
       setData(rows || []);
       setLoading(false);
     })();
-  }, [modeFilter, durationFilter]);
+  }, [modeFilter, timeframe, page]);
 
   const filtered = search
     ? data.filter((r: any) => r.player_name?.toLowerCase().includes(search.toLowerCase()))
     : data;
 
   return (
-    <ToolLayout title='> LEADERBOARD.exe' subtitle="// Top typing scores of all time">
-      <div className="space-y-4">
+    <div className="min-h-screen bg-background crt-overlay noise-overlay">
+      <div className="max-w-[900px] w-full mx-auto px-4 py-8">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-8">
+          <div className="flex items-center gap-3">
+            <Link to="/tools/typing-speed" className="text-muted-foreground hover:text-primary transition-colors">
+              <ArrowLeft size={18} />
+            </Link>
+            <h1 className="font-display text-xl text-primary">{'> LEADERBOARD.exe'}</h1>
+          </div>
+        </div>
+
         {/* Filters */}
-        <div className="flex flex-wrap gap-3 glass-card rounded-lg p-3">
-          <div className="flex gap-1">
-            {MODES.map(m => (
-              <button key={m} onClick={() => setModeFilter(m)}
-                className={`font-mono text-[10px] px-2 py-1 rounded border transition-all ${modeFilter === m ? 'border-primary bg-primary/10 text-primary' : 'border-muted text-muted-foreground hover:border-primary/40'}`}>
-                {m}
-              </button>
-            ))}
-          </div>
-          <span className="text-muted-foreground/30">|</span>
-          <div className="flex gap-1">
-            {DURATIONS.map(d => (
-              <button key={d} onClick={() => setDurationFilter(d)}
-                className={`font-mono text-[10px] px-2 py-1 rounded border transition-all ${durationFilter === d ? 'border-secondary bg-secondary/10 text-secondary' : 'border-muted text-muted-foreground hover:border-secondary/40'}`}>
-                {d === 'ALL' ? 'ALL' : `${d}s`}
-              </button>
-            ))}
-          </div>
+        <div className="flex flex-wrap items-center gap-2 mb-6">
+          {MODES.map(m => (
+            <button key={m} onClick={() => { setModeFilter(m); setPage(0); }}
+              className={`font-mono text-[10px] px-2.5 py-1 rounded transition-all ${modeFilter === m ? 'text-primary' : 'text-muted-foreground/40 hover:text-muted-foreground/70'}`}>
+              {m}
+            </button>
+          ))}
+          <span className="text-muted-foreground/20">|</span>
+          {TIMEFRAMES.map(t => (
+            <button key={t} onClick={() => { setTimeframe(t); setPage(0); }}
+              className={`font-mono text-[10px] px-2.5 py-1 rounded transition-all ${timeframe === t ? 'text-secondary' : 'text-muted-foreground/40 hover:text-muted-foreground/70'}`}>
+              {t}
+            </button>
+          ))}
           <input
             value={search}
             onChange={e => setSearch(e.target.value)}
-            placeholder="Search player..."
-            className="ml-auto px-3 py-1 bg-muted/30 border border-primary/15 rounded font-mono text-[10px] text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary/60 w-40"
+            placeholder="search player..."
+            className="ml-auto font-mono text-[10px] px-3 py-1.5 bg-muted/20 border border-primary/10 rounded text-foreground placeholder:text-muted-foreground/30 focus:outline-none focus:border-primary/40 w-36"
           />
         </div>
 
         {/* Table */}
-        <div className="glass-card rounded-lg p-4 overflow-x-auto">
-          {loading ? (
-            <p className="font-mono text-sm text-muted-foreground text-center py-8">// LOADING...<span className="blink text-primary ml-1">█</span></p>
-          ) : (
+        {loading ? (
+          <p className="font-mono text-sm text-muted-foreground text-center py-16">// LOADING...<span className="blink text-primary ml-1">█</span></p>
+        ) : (
+          <div className="overflow-x-auto">
             <table className="w-full font-mono text-xs">
               <thead>
-                <tr className="text-muted-foreground border-b border-primary/10">
-                  <th className="text-left py-2 px-3">#</th>
-                  <th className="text-left py-2 px-3">Player</th>
-                  <th className="text-right py-2 px-3">WPM</th>
-                  <th className="text-right py-2 px-3">Accuracy</th>
-                  <th className="text-left py-2 px-3">Mode</th>
-                  <th className="text-right py-2 px-3">Duration</th>
-                  <th className="text-right py-2 px-3">Date</th>
+                <tr className="text-muted-foreground/50 border-b border-primary/10">
+                  <th className="text-left py-2 px-3 w-12">#</th>
+                  <th className="text-left py-2 px-3">player</th>
+                  <th className="text-right py-2 px-3">wpm</th>
+                  <th className="text-right py-2 px-3">raw</th>
+                  <th className="text-right py-2 px-3">acc</th>
+                  <th className="text-right py-2 px-3">consistency</th>
+                  <th className="text-left py-2 px-3">mode</th>
+                  <th className="text-right py-2 px-3">date</th>
                 </tr>
               </thead>
               <tbody>
-                {filtered.map((row: any, i: number) => (
-                  <motion.tr
-                    key={row.id}
-                    initial={{ opacity: 0, x: -10 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: i * 0.02 }}
-                    className={`border-b border-primary/5 ${
-                      i === 0 ? 'text-primary bg-primary/5' :
-                      i === 1 ? 'text-secondary' :
-                      i === 2 ? 'text-destructive' : 'text-foreground'
-                    }`}
-                  >
-                    <td className="py-2 px-3 font-bold">{i + 1}</td>
-                    <td className="py-2 px-3">{row.player_name}</td>
-                    <td className="py-2 px-3 text-right font-bold">{row.wpm}</td>
-                    <td className="py-2 px-3 text-right">{row.accuracy}%</td>
-                    <td className="py-2 px-3">
-                      <span className="px-1.5 py-0.5 rounded border border-primary/20 text-[9px]">{row.mode}</span>
-                    </td>
-                    <td className="py-2 px-3 text-right">{row.duration}s</td>
-                    <td className="py-2 px-3 text-right">{new Date(row.created_at).toLocaleDateString()}</td>
-                  </motion.tr>
-                ))}
+                {filtered.map((row: any, i: number) => {
+                  const rank = page * perPage + i + 1;
+                  return (
+                    <motion.tr
+                      key={row.id}
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ delay: i * 0.015 }}
+                      className={`border-b border-primary/5 hover:border-l-[3px] hover:border-l-primary transition-all ${
+                        rank === 1 ? 'text-primary bg-primary/5' :
+                        rank === 2 ? 'text-secondary' :
+                        rank === 3 ? 'text-destructive' :
+                        rank <= 10 ? 'text-foreground/80' : 'text-foreground/60'
+                      }`}
+                    >
+                      <td className="py-2.5 px-3 font-bold">
+                        {rank === 1 ? <Crown size={14} className="inline text-primary" /> : rank}
+                      </td>
+                      <td className="py-2.5 px-3">{row.player_name}</td>
+                      <td className="py-2.5 px-3 text-right font-bold">{row.wpm}</td>
+                      <td className="py-2.5 px-3 text-right">{row.raw_wpm}</td>
+                      <td className="py-2.5 px-3 text-right">{row.accuracy}%</td>
+                      <td className="py-2.5 px-3 text-right">{row.consistency}%</td>
+                      <td className="py-2.5 px-3">
+                        <span className="text-[9px]">{row.mode} {row.mode_value}</span>
+                      </td>
+                      <td className="py-2.5 px-3 text-right text-muted-foreground">
+                        {new Date(row.created_at).toLocaleDateString()}
+                      </td>
+                    </motion.tr>
+                  );
+                })}
                 {filtered.length === 0 && (
-                  <tr><td colSpan={7} className="text-center py-8 text-muted-foreground">// No scores found</td></tr>
+                  <tr><td colSpan={8} className="text-center py-12 text-muted-foreground/40">// no scores found</td></tr>
                 )}
               </tbody>
             </table>
-          )}
-        </div>
+          </div>
+        )}
 
-        <div className="text-center">
-          <Link to="/tools/typing-speed" className="font-mono text-xs text-primary hover:underline">[← _BACK TO TYPING TEST]</Link>
+        {/* Pagination */}
+        <div className="flex items-center justify-center gap-3 mt-6">
+          <button
+            onClick={() => setPage(p => Math.max(0, p - 1))}
+            disabled={page === 0}
+            className="font-mono text-[10px] px-3 py-1 rounded border border-muted text-muted-foreground hover:text-primary disabled:opacity-20 transition-colors"
+          >
+            ← prev
+          </button>
+          <span className="font-mono text-[10px] text-muted-foreground/40">page {page + 1}</span>
+          <button
+            onClick={() => setPage(p => p + 1)}
+            disabled={data.length < perPage}
+            className="font-mono text-[10px] px-3 py-1 rounded border border-muted text-muted-foreground hover:text-primary disabled:opacity-20 transition-colors"
+          >
+            next →
+          </button>
         </div>
       </div>
-    </ToolLayout>
+    </div>
   );
 };
 
