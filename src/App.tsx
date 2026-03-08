@@ -41,6 +41,8 @@ const MarkdownEditor = lazy(() => import("./pages/tools/MarkdownEditor"));
 const CronExplainer = lazy(() => import("./pages/tools/CronExplainer"));
 const KeyboardTester = lazy(() => import("./pages/tools/KeyboardTester"));
 const MouseTester = lazy(() => import("./pages/tools/MouseTester"));
+const TypingSpeedTest = lazy(() => import("./pages/tools/TypingSpeedTest"));
+const TypingLeaderboard = lazy(() => import("./pages/tools/TypingLeaderboard"));
 const ShortRedirect = lazy(() => import("./pages/tools/ShortRedirect"));
 
 const queryClient = new QueryClient();
@@ -77,6 +79,8 @@ const App = () => (
               <Route path="/tools/cron" element={<CronExplainer />} />
               <Route path="/tools/keyboard" element={<KeyboardTester />} />
               <Route path="/tools/mouse" element={<MouseTester />} />
+              <Route path="/tools/typing-speed" element={<TypingSpeedTest />} />
+              <Route path="/tools/typing-speed/leaderboard" element={<TypingLeaderboard />} />
               <Route path="/paste/:id" element={<PasteView />} />
               <Route path="/s/:code" element={<ShortRedirect />} />
               <Route path="/admin" element={<AdminLogin />} />

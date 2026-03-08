@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 import {
   Braces, KeyRound, Fingerprint, Binary, QrCode, Globe, ShieldCheck,
   Regex, Link2, FileCode2, Hash, Palette, FileText, Clock, Mail, Search,
-  Keyboard, Mouse,
+  Keyboard, Mouse, Timer,
 } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 
@@ -34,6 +34,7 @@ const TOOLS: ToolDef[] = [
   { name: 'Temp Mail', desc: 'Disposable inbox — auto-expires on refresh', path: '/tools/tempmail', icon: Mail, category: 'PRODUCTIVITY' },
   { name: 'Keyboard Tester', desc: 'Test every key on your keyboard visually', path: '/tools/keyboard', icon: Keyboard, category: 'HARDWARE' },
   { name: 'Mouse Tester', desc: 'Test clicks, movement & scroll of your mouse', path: '/tools/mouse', icon: Mouse, category: 'HARDWARE' },
+  { name: 'Typing Speed', desc: 'Measure your WPM, accuracy and reaction time', path: '/tools/typing-speed', icon: Timer, category: 'HARDWARE' },
 ];
 
 const CATEGORIES = ['ALL', 'CONVERTERS', 'GENERATORS', 'LOOKUP', 'PRODUCTIVITY', 'HARDWARE'] as const;
