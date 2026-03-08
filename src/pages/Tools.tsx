@@ -36,6 +36,13 @@ const TOOLS: ToolDef[] = [
   { name: 'Keyboard Tester', desc: 'Test every key on your keyboard visually', path: '/tools/keyboard', icon: Keyboard, category: 'HARDWARE' },
   { name: 'Mouse Tester', desc: 'Test clicks, movement & scroll of your mouse', path: '/tools/mouse', icon: Mouse, category: 'HARDWARE' },
   { name: 'Typing Speed', desc: 'Measure your WPM, accuracy and reaction time', path: '/tools/typing-speed', icon: Timer, category: 'HARDWARE' },
+  { name: 'Image Converter', desc: 'Convert, resize and compress images client-side', path: '/tools/image-converter', icon: ImageIcon, category: 'IMAGE & MEDIA' },
+  { name: 'Favicon Generator', desc: 'Generate favicon package for your website', path: '/tools/favicon', icon: Star, category: 'IMAGE & MEDIA' },
+  { name: 'Text Diff', desc: 'Compare two texts and highlight differences', path: '/tools/diff', icon: GitCompare, category: 'TEXT & WRITING' },
+  { name: 'Text Case', desc: 'Convert text between any case format instantly', path: '/tools/text-case', icon: CaseSensitive, category: 'TEXT & WRITING' },
+  { name: 'Calculator', desc: 'Scientific calculator with expression history', path: '/tools/calculator', icon: Calculator, category: 'MATH' },
+  { name: 'Base Converter', desc: 'Convert between decimal, binary, hex, octal', path: '/tools/base-converter', icon: ArrowLeftRight, category: 'MATH' },
+  { name: '2048', desc: 'Merge tiles to reach 2048 — cyberpunk edition', path: '/tools/2048', icon: Gamepad2, category: 'GAMES' },
 ];
 
 const CATEGORIES = ['ALL', 'CONVERTERS', 'GENERATORS', 'LOOKUP', 'PRODUCTIVITY', 'HARDWARE'] as const;
