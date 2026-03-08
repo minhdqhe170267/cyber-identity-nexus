@@ -13,7 +13,7 @@ type ToolDef = {
   desc: string;
   path: string;
   icon: React.ElementType;
-  category: 'CONVERTERS' | 'GENERATORS' | 'LOOKUP' | 'PRODUCTIVITY';
+  category: 'CONVERTERS' | 'GENERATORS' | 'LOOKUP' | 'PRODUCTIVITY' | 'HARDWARE';
 };
 
 const TOOLS: ToolDef[] = [
