@@ -37,20 +37,54 @@ const CountUp = ({ end }: { end: number }) => {
 };
 
 const getContributionWeeks = (contribs: ContributionDay[]) => {
-  const last52Weeks = contribs.slice(-364);
-  const weeks: ContributionDay[][] = [];
+  // Sort by date (API returns 2026 before 2025)
+  const sorted = [...contribs].sort(
+    (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime(),
+  );
 
-  for (let i = 0; i < last52Weeks.length; i += 7) {
-    weeks.push(last52Weeks.slice(i, i + 7));
+  // Filter out future dates
+  const today = new Date();
+  today.setHours(23, 59, 59, 999);
+  const pastOnly = sorted.filter((d) => new Date(d.date) <= today);
+
+  // Take last 365 days
+  const recent = pastOnly.slice(-365);
+
+  // Align to start on Sunday (pad beginning if needed)
+  const firstDay = new Date(recent[0]?.date);
+  const dayOfWeek = firstDay.getDay(); // 0 = Sunday
+  const padded: (ContributionDay | null)[] = [
+    ...Array(dayOfWeek).fill(null),
+    ...recent,
+  ];
+
+  const weeks: (ContributionDay | null)[][] = [];
+  for (let i = 0; i < padded.length; i += 7) {
+    weeks.push(padded.slice(i, i + 7));
   }
 
   return weeks;
 };
 
-const cellColor = (count: number) =>
-  count === 0 ? 'rgba(255,255,255,0.05)' :
-  count <= 3 ? 'rgba(0,255,156,0.3)' :
-  count <= 7 ? 'rgba(0,255,156,0.6)' :
+const getTotalContributions = (contribs: ContributionDay[]) => {
+  const today = new Date();
+  today.setHours(23, 59, 59, 999);
+  const oneYearAgo = new Date(today);
+  oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
+
+  return contribs
+    .filter((d) => {
+      const date = new Date(d.date);
+      return date >= oneYearAgo && date <= today;
+    })
+    .reduce((sum, d) => sum + d.count, 0);
+};
+
+const cellColor = (level: number) =>
+  level === 0 ? 'rgba(255,255,255,0.05)' :
+  level === 1 ? 'rgba(0,255,156,0.25)' :
+  level === 2 ? 'rgba(0,255,156,0.5)' :
+  level === 3 ? 'rgba(0,255,156,0.75)' :
   '#00FF9C';
 
 const GitHubStats = () => {
@@ -130,22 +164,33 @@ const GitHubStats = () => {
               viewport={{ once: true }}
               className="glass-card rounded-lg p-6"
             >
-              <h3 className="font-display text-sm text-primary mb-4">[CONTRIBUTION_MAP]</h3>
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="font-display text-sm text-primary">[CONTRIBUTION_MAP]</h3>
+                {contribs.length > 0 && (
+                  <span className="font-mono text-xs text-muted-foreground">
+                    <span className="text-primary">{getTotalContributions(contribs)}</span> contributions in the last year
+                  </span>
+                )}
+              </div>
               {weeks.length ? (
                 <div className="overflow-x-auto">
-                  <div className="flex gap-[2px]" style={{ minWidth: weeks.length * 12 }}>
+                  <div className="flex gap-[2px]" style={{ minWidth: weeks.length * 11 }}>
                     {weeks.map((week, wi) => (
                       <div key={wi} className="flex flex-col gap-[2px]">
                         {week.map((day, di) => (
-                          <div
-                            key={`${day.date}-${di}`}
-                            className="w-[10px] h-[10px] rounded-sm"
-                            style={{
-                              backgroundColor: cellColor(day.count),
-                              boxShadow: day.count >= 8 ? '0 0 4px rgba(0,255,156,0.5)' : 'none',
-                            }}
-                            title={`${day.date}: ${day.count} contributions`}
-                          />
+                          day ? (
+                            <div
+                              key={`${day.date}-${di}`}
+                              className="w-[9px] h-[9px] rounded-sm"
+                              style={{
+                                backgroundColor: cellColor(day.level),
+                                boxShadow: day.level >= 3 ? '0 0 4px rgba(0,255,156,0.5)' : 'none',
+                              }}
+                              title={`${day.date}: ${day.count} contributions`}
+                            />
+                          ) : (
+                            <div key={`pad-${di}`} className="w-[9px] h-[9px]" />
+                          )
                         ))}
                       </div>
                     ))}
