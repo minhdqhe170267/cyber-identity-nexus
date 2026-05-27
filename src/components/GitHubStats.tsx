@@ -123,6 +123,25 @@ const GitHubStats = () => {
   }, [repos]);
 
   const weeks = useMemo(() => getContributionWeeks(contribs), [contribs]);
+  const contributionScrollerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!weeks.length || !contributionScrollerRef.current) return;
+
+    const scroller = contributionScrollerRef.current;
+    const scrollToLatest = () => {
+      scroller.scrollLeft = scroller.scrollWidth;
+    };
+
+    scrollToLatest();
+    const frame = window.requestAnimationFrame(scrollToLatest);
+    window.addEventListener('resize', scrollToLatest);
+
+    return () => {
+      window.cancelAnimationFrame(frame);
+      window.removeEventListener('resize', scrollToLatest);
+    };
+  }, [weeks.length]);
 
   const refresh = () => {
     void Promise.all([userQuery.refetch(), reposQuery.refetch(), contribQuery.refetch()]);
@@ -175,7 +194,7 @@ const GitHubStats = () => {
                 )}
               </div>
               {weeks.length ? (
-                <div className="overflow-x-auto">
+                <div ref={contributionScrollerRef} className="overflow-x-auto scrollbar-hidden">
                   <div className="flex gap-[2px]" style={{ minWidth: weeks.length * 11 }}>
                     {weeks.map((week, wi) => (
                       <div key={wi} className="flex flex-col gap-[2px]">
