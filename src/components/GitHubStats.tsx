@@ -50,8 +50,10 @@ const getContributionWeeks = (contribs: ContributionDay[]) => {
   // Take last 365 days
   const recent = pastOnly.slice(-365);
 
+  if (!recent.length) return [];
+
   // Align to start on Sunday (pad beginning if needed)
-  const firstDay = new Date(recent[0]?.date);
+  const firstDay = new Date(recent[0].date);
   const dayOfWeek = firstDay.getDay(); // 0 = Sunday
   const padded: (ContributionDay | null)[] = [
     ...Array(dayOfWeek).fill(null),
