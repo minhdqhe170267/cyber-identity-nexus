@@ -8,16 +8,13 @@ import { lazy, Suspense } from "react";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import PageViewTracker from "@/components/PageViewTracker";
 import ProtectedRoute from "@/components/ProtectedRoute";
+import CustomCursor from "@/components/CustomCursor";
 import Index from "./pages/Index";
 
-const Blog = lazy(() => import("./pages/Blog"));
-const BlogPost = lazy(() => import("./pages/BlogPost"));
 const Guestbook = lazy(() => import("./pages/Guestbook"));
 const AdminLogin = lazy(() => import("./pages/AdminLogin"));
 const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
 const AdminProjects = lazy(() => import("./pages/AdminProjects"));
-const AdminBlog = lazy(() => import("./pages/AdminBlog"));
-const AdminBlogEditor = lazy(() => import("./pages/AdminBlogEditor"));
 const AdminGuestbook = lazy(() => import("./pages/AdminGuestbook"));
 const TempMail = lazy(() => import("./pages/TempMail"));
 const NotFound = lazy(() => import("./pages/NotFound"));
@@ -61,12 +58,11 @@ const App = () => (
         <Toaster />
         <Sonner />
         <BrowserRouter>
+          <CustomCursor />
           <PageViewTracker />
           <Suspense fallback={<LoadingSpinner />}>
             <Routes>
               <Route path="/" element={<Index />} />
-              <Route path="/blog" element={<Blog />} />
-              <Route path="/blog/:slug" element={<BlogPost />} />
               <Route path="/guestbook" element={<Guestbook />} />
               <Route path="/tools" element={<Tools />} />
               <Route path="/tools/tempmail" element={<TempMail />} />
@@ -100,8 +96,6 @@ const App = () => (
               <Route path="/admin" element={<AdminLogin />} />
               <Route path="/admin/dashboard" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
               <Route path="/admin/projects" element={<ProtectedRoute><AdminProjects /></ProtectedRoute>} />
-              <Route path="/admin/blog" element={<ProtectedRoute><AdminBlog /></ProtectedRoute>} />
-              <Route path="/admin/blog/:id" element={<ProtectedRoute><AdminBlogEditor /></ProtectedRoute>} />
               <Route path="/admin/guestbook" element={<ProtectedRoute><AdminGuestbook /></ProtectedRoute>} />
               <Route path="*" element={<NotFound />} />
             </Routes>

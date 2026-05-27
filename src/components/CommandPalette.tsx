@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { Home, User, FolderGit2, Cpu, BarChart3, BookOpen, MessageSquare, Mail, Gamepad2, Terminal, Zap, Heart } from 'lucide-react';
+import { Home, User, FolderGit2, Cpu, BarChart3, MessageSquare, Mail, Gamepad2, Terminal, Zap, Heart } from 'lucide-react';
 
 type Command = {
   id: string;
@@ -54,7 +54,6 @@ const CommandPalette = ({ onPlayGame }: { onPlayGame: () => void }) => {
     { id: 'projects', label: 'Projects', icon: FolderGit2, action: () => scrollTo('projects') },
     { id: 'skills', label: 'Skills', icon: Cpu, action: () => scrollTo('skills') },
     { id: 'stats', label: 'GitHub Stats', icon: BarChart3, action: () => scrollTo('stats') },
-    { id: 'blog', label: 'Blog', icon: BookOpen, action: () => { setOpen(false); navigate('/blog'); } },
     { id: 'guestbook', label: 'Guestbook', icon: MessageSquare, action: () => { setOpen(false); navigate('/guestbook'); } },
     { id: 'contact', label: 'Contact', icon: Mail, action: () => scrollTo('contact') },
     { id: 'tools', label: 'Tools Hub', icon: Terminal, action: () => { setOpen(false); navigate('/tools'); } },

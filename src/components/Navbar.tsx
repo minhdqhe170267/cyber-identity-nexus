@@ -2,13 +2,13 @@ import { useEffect, useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Menu } from 'lucide-react';
 import MobileMenu from './MobileMenu';
+import { GITHUB_USERNAME } from '@/config/profile';
 
 const NAV_ITEMS = [
   { label: 'HOME', action: 'home' },
   { label: 'ABOUT', action: 'about' },
   { label: 'PROJECTS', action: 'projects' },
   { label: 'SKILLS', action: 'skills' },
-  { label: 'BLOG', action: '/blog' },
   { label: 'TOOLS', action: '/tools' },
   { label: 'GUESTBOOK', action: '/guestbook' },
   { label: 'CONTACT', action: 'contact' },
@@ -51,7 +51,7 @@ const Navbar = () => {
       <nav className="fixed top-[3px] left-0 right-0 z-50 glass-card border-b border-primary/15 px-6 py-3">
         <div className="max-w-6xl mx-auto flex items-center justify-between">
           <Link to="/" className="font-display text-sm text-primary neon-text-green tracking-wider">
-            DIOS://
+            {GITHUB_USERNAME}://
           </Link>
           <div className="hidden md:flex items-center gap-6">
             {NAV_ITEMS.map((item) => (

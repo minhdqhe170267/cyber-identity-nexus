@@ -1,12 +1,11 @@
 import { ReactNode } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, FolderGit2, BookOpen, MessageSquare, LogOut, Home } from 'lucide-react';
+import { LayoutDashboard, FolderGit2, MessageSquare, LogOut, Home } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 
 const NAV = [
   { label: 'Dashboard', path: '/admin/dashboard', icon: LayoutDashboard },
   { label: 'Projects', path: '/admin/projects', icon: FolderGit2 },
-  { label: 'Blog', path: '/admin/blog', icon: BookOpen },
   { label: 'Guestbook', path: '/admin/guestbook', icon: MessageSquare },
 ];
 

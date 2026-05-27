@@ -1,6 +1,5 @@
 import { lazy, Suspense, useState } from 'react';
 import ParticleGrid from '@/components/ParticleGrid';
-import CustomCursor from '@/components/CustomCursor';
 import Navbar from '@/components/Navbar';
 import HeroSection from '@/components/HeroSection';
 import CommandPalette from '@/components/CommandPalette';
@@ -19,7 +18,6 @@ const Index = () => {
   return (
     <div className="relative min-h-screen crt-overlay noise-overlay">
       <ParticleGrid />
-      <CustomCursor />
       <Navbar />
       <CommandPalette onPlayGame={() => setGameOpen(true)} />
       <SnakeGame open={gameOpen} onClose={() => setGameOpen(false)} />

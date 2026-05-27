@@ -142,6 +142,7 @@
     pointer-events: none;
     z-index: 99999;
     transform: translate(-50%, -50%);
+    transition: width 120ms ease, height 120ms ease, border-color 120ms ease, background 120ms ease, box-shadow 120ms ease;
   }
 
   .custom-cursor::before,
@@ -166,6 +167,57 @@
     top: 50%;
     left: 0;
     transform: translateY(-50%);
+  }
+
+  .custom-cursor--interactive {
+    width: 42px;
+    height: 42px;
+    border: 2px solid hsl(var(--neon-blue));
+    border-radius: 999px;
+    background:
+      radial-gradient(circle, hsl(var(--neon-blue)) 0 3px, transparent 4px),
+      hsl(var(--neon-blue) / 0.08);
+    box-shadow: 0 0 18px hsl(var(--neon-blue) / 0.65), inset 0 0 14px hsl(var(--neon-blue) / 0.18);
+  }
+
+  .is-hovering-clickable .custom-cursor {
+    width: 42px;
+    height: 42px;
+    border: 2px solid hsl(var(--neon-blue));
+    border-radius: 999px;
+    background:
+      radial-gradient(circle, hsl(var(--neon-blue)) 0 3px, transparent 4px),
+      hsl(var(--neon-blue) / 0.08);
+    box-shadow: 0 0 18px hsl(var(--neon-blue) / 0.65), inset 0 0 14px hsl(var(--neon-blue) / 0.18);
+  }
+
+  .custom-cursor--interactive::before,
+  .custom-cursor--interactive::after,
+  .is-hovering-clickable .custom-cursor::before,
+  .is-hovering-clickable .custom-cursor::after {
+    background: hsl(var(--neon-blue));
+    box-shadow: 0 0 6px hsl(var(--neon-blue) / 0.8);
+  }
+
+  .custom-cursor--interactive::before,
+  .is-hovering-clickable .custom-cursor::before {
+    height: 18px;
+    top: 50%;
+    transform: translate(-50%, -50%);
+  }
+
+  .custom-cursor--interactive::after,
+  .is-hovering-clickable .custom-cursor::after {
+    width: 18px;
+    left: 50%;
+    transform: translate(-50%, -50%);
+  }
+
+  .custom-cursor--pressed {
+    width: 24px;
+    height: 24px;
+    background: hsl(var(--neon-green) / 0.14);
+    border-color: hsl(var(--neon-green));
   }
 
   .btn-neon-green {

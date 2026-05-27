@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
+import { GITHUB_USERNAME, GITHUB_PROFILE_URL } from '@/config/profile';
 
 const LINES = [
   { text: '> Initializing system...', delay: 800 },
-  { text: '> Loading portfolio.exe...', delay: 600 },
-  { text: '> Welcome to NETRUNNER\'s terminal.', delay: 400 },
-  { text: '> Full-stack Developer / Engineer', delay: 0 },
+  { text: '> Loading GitHub profile...', delay: 600 },
+  { text: `> Connected to github.com/${GITHUB_USERNAME}`, delay: 400 },
+  { text: '> Public repositories and activity synced live.', delay: 0 },
 ];
 
 const HeroSection = () => {
@@ -60,11 +61,10 @@ const HeroSection = () => {
               <span className={i === 2 ? '' : 'text-foreground'}>
                 {i === 2 ? (
                   <>
-                    {'> Welcome to '}
+                    {'> Connected to '}
                     <span className="text-primary glitch-text neon-text-green font-bold">
-                      NETRUNNER
+                      {GITHUB_PROFILE_URL.replace('https://', '')}
                     </span>
-                    {"'s terminal."}
                   </>
                 ) : (
                   <span className={i === 3 ? 'text-secondary neon-text-blue' : ''}>

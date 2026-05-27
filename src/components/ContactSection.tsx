@@ -1,9 +1,12 @@
-import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Github, Mail } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
-
-type FormState = 'idle' | 'sending' | 'success' | 'error';
+import { Github, Mail, MapPin, Phone } from 'lucide-react';
+import {
+  CONTACT_EMAIL,
+  CONTACT_LOCATION,
+  CONTACT_PHONE,
+  GITHUB_PROFILE_URL,
+  GITHUB_USERNAME,
+} from '@/config/profile';
 
 const staggerContainer = {
   hidden: {},
@@ -15,116 +18,87 @@ const fadeUp = {
   visible: { opacity: 1, y: 0, transition: { duration: 0.4 } },
 };
 
+const phoneHref = `tel:${CONTACT_PHONE.replace(/[^\d+]/g, '')}`;
+
+const contacts = [
+  {
+    Icon: Mail,
+    label: 'Email',
+    value: CONTACT_EMAIL,
+    href: `mailto:${CONTACT_EMAIL}`,
+    command: `$ mail ${CONTACT_EMAIL}`,
+  },
+  {
+    Icon: Phone,
+    label: 'Phone',
+    value: CONTACT_PHONE,
+    href: phoneHref,
+    command: `$ call ${CONTACT_PHONE}`,
+  },
+  {
+    Icon: MapPin,
+    label: 'Location',
+    value: CONTACT_LOCATION,
+    href: `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(CONTACT_LOCATION)}`,
+    command: `$ locate "${CONTACT_LOCATION}"`,
+  },
+  {
+    Icon: Github,
+    label: 'GitHub',
+    value: `@${GITHUB_USERNAME}`,
+    href: GITHUB_PROFILE_URL,
+    command: `$ gh profile @${GITHUB_USERNAME}`,
+  },
+];
+
 const ContactSection = () => {
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [message, setMessage] = useState('');
-  const [state, setState] = useState<FormState>('idle');
-  const [errorMsg, setErrorMsg] = useState('');
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!name.trim() || !email.trim() || !message.trim()) return;
-
-    setState('sending');
-    setErrorMsg('');
-
-    const { error } = await supabase.from('contact_messages').insert({
-      name: name.trim(),
-      email: email.trim(),
-      message: message.trim(),
-    });
-
-    if (error) {
-      setState('error');
-      setErrorMsg('Transmission failed. Please try again.');
-    } else {
-      setState('success');
-      setName('');
-      setEmail('');
-      setMessage('');
-      setTimeout(() => setState('idle'), 4000);
-    }
-  };
-
   return (
     <section id="contact" className="relative py-24 px-6">
-      <div className="max-w-[600px] mx-auto">
+      <div className="max-w-[720px] mx-auto">
         <motion.div
           initial={{ opacity: 0, y: 40 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: '-100px' }}
           transition={{ duration: 0.6 }}
         >
-          <h2 className="section-title">{"> OPEN_CHANNEL.exe"}</h2>
-          <p className="section-subtitle">{"// Establish secure connection"}</p>
+          <h2 className="section-title">{"> CONTACT_INFO.txt"}</h2>
+          <p className="section-subtitle">{"// Direct contact channels"}</p>
         </motion.div>
 
-        <motion.form
+        <motion.div
           variants={staggerContainer}
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true }}
-          onSubmit={handleSubmit}
-          className="glass-card rounded-lg p-8 space-y-6"
+          className="glass-card rounded-lg p-8"
         >
-          {(['name', 'email'] as const).map((field) => (
-            <motion.div key={field} variants={fadeUp}>
-              <label className="terminal-label block mb-2">{`> ${field}:`}</label>
-              <input
-                type={field === 'email' ? 'email' : 'text'}
-                required
-                maxLength={field === 'email' ? 255 : 100}
-                value={field === 'name' ? name : email}
-                onChange={(e) => field === 'name' ? setName(e.target.value) : setEmail(e.target.value)}
-                className="w-full bg-muted/50 border border-primary/15 rounded px-4 py-3 font-mono text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30 transition-all"
-                placeholder={field === 'name' ? 'John Connor' : 'john@resistance.io'}
-              />
-            </motion.div>
-          ))}
-          <motion.div variants={fadeUp}>
-            <label className="terminal-label block mb-2">{"> message:"}</label>
-            <textarea
-              required
-              maxLength={1000}
-              rows={5}
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              className="w-full bg-muted/50 border border-primary/15 rounded px-4 py-3 font-mono text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30 transition-all resize-none"
-              placeholder="Your encrypted message..."
-            />
-          </motion.div>
-
-          <motion.div variants={fadeUp}>
-            <button
-              type="submit"
-              disabled={state === 'sending' || state === 'success'}
-              className="w-full bg-primary text-primary-foreground font-display text-sm tracking-wider py-3 rounded hover:opacity-90 transition-opacity disabled:opacity-50"
-            >
-              {state === 'sending' ? 'ENCRYPTING...' :
-               state === 'success' ? '// TRANSMISSION COMPLETE ✓' :
-               '[_SEND_TRANSMISSION]'}
-            </button>
-          </motion.div>
-
-          {state === 'error' && (
-            <p className="font-mono text-xs text-accent text-center">{errorMsg}</p>
-          )}
-        </motion.form>
-
-        <motion.div
-          initial={{ opacity: 0 }}
-          whileInView={{ opacity: 1 }}
-          viewport={{ once: true }}
-          transition={{ delay: 0.6 }}
-          className="mt-6 flex justify-center gap-6 font-mono text-xs text-muted-foreground"
-        >
-          <a href="mailto:hello@netrunner.dev" className="hover:text-primary transition-colors flex items-center gap-2">
-            <Mail size={14} /> {"$ mail hello@netrunner.dev"}
-          </a>
-          <a href="#" className="hover:text-primary transition-colors flex items-center gap-2">
-            <Github size={14} /> {"$ git clone netrunner"}
-          </a>
+          <div className="space-y-4">
+            {contacts.map(({ Icon, label, value, href, command }) => (
+              <motion.a
+                key={label}
+                variants={fadeUp}
+                href={href}
+                target={href.startsWith('http') ? '_blank' : undefined}
+                rel={href.startsWith('http') ? 'noreferrer' : undefined}
+                className="group flex items-center gap-4 rounded border border-primary/15 bg-muted/20 px-4 py-4 transition-colors hover:border-primary/40 hover:bg-primary/5"
+              >
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded border border-primary/30 text-primary group-hover:bg-primary/10">
+                  <Icon size={18} />
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+                    {label}
+                  </span>
+                  <span className="block truncate font-mono text-sm text-foreground">
+                    {value}
+                  </span>
+                </span>
+                <span className="hidden font-mono text-[10px] text-primary/70 md:block">
+                  {command}
+                </span>
+              </motion.a>
+            ))}
+          </div>
         </motion.div>
       </div>
     </section>
